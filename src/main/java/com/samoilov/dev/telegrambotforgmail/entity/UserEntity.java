@@ -1,12 +1,13 @@
 package com.samoilov.dev.telegrambotforgmail.entity;
 
+import com.samoilov.dev.telegrambotforgmail.entity.id.TelegramId;
 import com.samoilov.dev.telegrambotforgmail.enums.ActiveType;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.EnumType;
 import jakarta.persistence.Enumerated;
-import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.Id;
+import jakarta.persistence.IdClass;
 import jakarta.persistence.Table;
 import jakarta.persistence.UniqueConstraint;
 import jakarta.validation.constraints.Email;
@@ -16,7 +17,7 @@ import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
 import org.hibernate.annotations.CreationTimestamp;
-import org.hibernate.annotations.GenericGenerator;
+import org.hibernate.annotations.ResultCheckStyle;
 import org.hibernate.annotations.SQLDelete;
 import org.hibernate.annotations.UpdateTimestamp;
 
@@ -28,30 +29,18 @@ import java.time.LocalDateTime;
 @NoArgsConstructor
 @AllArgsConstructor
 @Builder(toBuilder = true)
-@SQLDelete(sql = "UPDATE user_table SET active_type = 'DISABLED' WHERE id = ?")
+@IdClass(TelegramId.class)
+@SQLDelete(sql = "UPDATE user_table SET active_type = 'DISABLED' WHERE telegram_id = ?", check = ResultCheckStyle.COUNT)
 @Table(name = "user_table", uniqueConstraints = {
-        @UniqueConstraint(columnNames = "telegram_id", name = "user_table_unique_telegram_id_idx"),
         @UniqueConstraint(columnNames = "gmail_address", name = "user_table_unique_gmail_address_idx")
 })
 public class UserEntity {
 
     @Id
-    @GenericGenerator(name = "UUID")
-    @GeneratedValue(generator = "UUID")
-    @Column(name = "user_id", length = 50)
-    private String id;
-
-    @CreationTimestamp
-    @Column(name = "registered_at", updatable = false)
-    private LocalDateTime createdAt;
-
-    @UpdateTimestamp
-    @Column(name = "updated_at")
-    private LocalDateTime updatedAt;
-
     @Column(name = "telegram_id", length = 50)
     private Long telegramId;
 
+    @Id
     @Column(name = "first_name", length = 50)
     private String firstName;
 
@@ -64,6 +53,14 @@ public class UserEntity {
     @Email(regexp = "^[\\w\\d+_.-]+@gmail.com$")
     @Column(name = "gmail_address", length = 50)
     private String email;
+
+    @CreationTimestamp
+    @Column(name = "registered_at")
+    private LocalDateTime createdAt;
+
+    @UpdateTimestamp
+    @Column(name = "updated_at")
+    private LocalDateTime updatedAt;
 
     @Builder.Default
     @Enumerated(EnumType.STRING)

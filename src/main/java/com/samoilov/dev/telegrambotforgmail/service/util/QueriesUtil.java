@@ -3,7 +3,7 @@ package com.samoilov.dev.telegrambotforgmail.service.util;
 import lombok.experimental.UtilityClass;
 
 @UtilityClass
-public class Query {
+public class QueriesUtil {
 
     public static final String ANYWHERE = "in:anywhere";
 
