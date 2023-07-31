@@ -12,7 +12,7 @@ import lombok.NoArgsConstructor;
 @AllArgsConstructor
 public class GmailDto {
 
-    private String authorizationUrl;
+    private Long chatId;
 
     private Gmail gmail;
 

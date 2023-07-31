@@ -1,69 +1,48 @@
 package com.samoilov.dev.telegrambotforgmail.service.domain;
 
 import com.google.api.client.auth.oauth2.Credential;
-import com.google.api.client.extensions.jetty.auth.oauth2.LocalServerReceiver;
 import com.google.api.client.googleapis.auth.oauth2.GoogleAuthorizationCodeFlow;
+import com.google.api.client.googleapis.auth.oauth2.GoogleAuthorizationCodeTokenRequest;
 import com.google.api.client.googleapis.auth.oauth2.GoogleClientSecrets;
+import com.google.api.client.googleapis.auth.oauth2.GoogleCredential;
+import com.google.api.client.googleapis.auth.oauth2.GoogleTokenResponse;
 import com.google.api.client.googleapis.javanet.GoogleNetHttpTransport;
 import com.google.api.client.http.javanet.NetHttpTransport;
 import com.google.api.client.json.JsonFactory;
-import com.google.api.client.json.gson.GsonFactory;
 import com.google.api.client.util.store.FileDataStoreFactory;
 import com.google.api.services.gmail.Gmail;
-import com.google.api.services.gmail.GmailScopes;
-import com.samoilov.dev.telegrambotforgmail.config.GoogleConfiguration;
 import com.samoilov.dev.telegrambotforgmail.config.properties.GoogleProperties;
-import com.samoilov.dev.telegrambotforgmail.dto.CredentialDto;
-import com.samoilov.dev.telegrambotforgmail.dto.GmailDto;
+import com.samoilov.dev.telegrambotforgmail.exception.AuthorizationUrlCreatingException;
 import com.samoilov.dev.telegrambotforgmail.exception.GmailCreatingException;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 
 import java.io.File;
 import java.io.IOException;
-import java.io.InputStream;
-import java.io.InputStreamReader;
 import java.security.GeneralSecurityException;
 import java.util.List;
-import java.util.Objects;
 
+@Slf4j
 @Service
 @RequiredArgsConstructor
 public class GmailService {
 
+    private final GoogleClientSecrets googleClientSecrets;
+
+    private final NetHttpTransport netHttpTransport;
+
     private final GoogleProperties googleProperties;
 
-    private static final List<String> SCOPES = List.of(GmailScopes.MAIL_GOOGLE_COM);
+    private final JsonFactory jsonFactory;
 
-    private static final JsonFactory JSON_FACTORY = GsonFactory.getDefaultInstance();
+    private final List<String> scopes;
 
-    public GmailDto getGmail(String userId) {
+    public String getAuthorizationUrl(Long chatId) {
         try {
             NetHttpTransport httpTransport = GoogleNetHttpTransport.newTrustedTransport();
-            CredentialDto credentialDto = this.getCredentials(httpTransport, userId);
-            Gmail gmail = new Gmail
-                    .Builder(httpTransport, JSON_FACTORY, credentialDto.getCredential())
-                    .setApplicationName(googleProperties.getApplicationName())
-                    .build();
-
-            return GmailDto
-                    .builder()
-                    .authorizationUrl(credentialDto.getAuthorizationUrl())
-                    .gmail(gmail)
-                    .build();
-        } catch (GeneralSecurityException | IOException e) {
-            throw new GmailCreatingException(e);
-        }
-    }
-
-    private CredentialDto getCredentials(NetHttpTransport httpTransport, String userId) {
-        try (
-                InputStream in = GoogleConfiguration.class.getResourceAsStream(googleProperties.getCredentialsPath());
-                InputStreamReader inr = new InputStreamReader(Objects.requireNonNull(in))
-        ) {
-            GoogleClientSecrets clientSecrets = GoogleClientSecrets.load(JSON_FACTORY, inr);
             GoogleAuthorizationCodeFlow flow = new GoogleAuthorizationCodeFlow
-                    .Builder(httpTransport, JSON_FACTORY, clientSecrets, SCOPES)
+                    .Builder(httpTransport, jsonFactory, googleClientSecrets, scopes)
                     .setDataStoreFactory(
                             new FileDataStoreFactory(
                                     new File(googleProperties.getTokensPath())
@@ -71,31 +50,44 @@ public class GmailService {
                     )
                     .setAccessType("offline")
                     .build();
-            LocalServerReceiver receiver = new LocalServerReceiver
-                    .Builder()
-                    .setPort(8080)
-                    .build();
 
-            return this.getCredentialDto(flow, receiver, userId);
-        } catch (IOException | NullPointerException e) {
+            return flow
+                    .newAuthorizationUrl()
+                    .setRedirectUri("http://localhost:8080/oauth2callback/".concat(String.valueOf(chatId)))
+                    .build();
+        } catch (IOException | NullPointerException | GeneralSecurityException e) {
+            throw new AuthorizationUrlCreatingException(e);
+        }
+    }
+
+    @SuppressWarnings("deprecation")
+    public Credential exchangeCode(String authCode, String redirectUri) {
+        try {
+            GoogleTokenResponse response = new GoogleAuthorizationCodeTokenRequest(
+                    netHttpTransport,
+                    jsonFactory,
+                    "https://oauth2.googleapis.com/token",
+                    googleClientSecrets.getDetails().getClientId(),
+                    googleClientSecrets.getDetails().getClientSecret(),
+                    authCode,
+                    redirectUri
+            ).execute();
+
+            return new GoogleCredential.Builder()
+                    .setClientSecrets(googleClientSecrets)
+                    .setJsonFactory(jsonFactory)
+                    .setTransport(netHttpTransport)
+                    .build()
+                    .setAccessToken(response.getAccessToken())
+                    .setRefreshToken(response.getRefreshToken());
+        } catch (IOException e) {
             throw new GmailCreatingException(e);
         }
     }
 
-    private CredentialDto getCredentialDto(
-            GoogleAuthorizationCodeFlow flow,
-            LocalServerReceiver receiver,
-            String userId) throws IOException {
-        String authUrl = flow
-                .newAuthorizationUrl()
-                .setRedirectUri(receiver.getRedirectUri())
-                .build();
-        Credential credential = flow.loadCredential(userId);
-
-        return CredentialDto
-                .builder()
-                .authorizationUrl(authUrl)
-                .credential(credential)
+    public Gmail createGmailService(Credential credential) {
+        return new Gmail.Builder(netHttpTransport, jsonFactory, credential)
+                .setApplicationName(googleProperties.getApplicationName())
                 .build();
     }
 

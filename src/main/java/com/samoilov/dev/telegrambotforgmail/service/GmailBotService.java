@@ -1,7 +1,6 @@
 package com.samoilov.dev.telegrambotforgmail.service;
 
 import com.samoilov.dev.telegrambotforgmail.component.UserCredentialsMapper;
-import com.samoilov.dev.telegrambotforgmail.dto.GmailDto;
 import com.samoilov.dev.telegrambotforgmail.dto.UserDto;
 import com.samoilov.dev.telegrambotforgmail.enums.CommandType;
 import com.samoilov.dev.telegrambotforgmail.service.domain.GmailService;
@@ -9,7 +8,6 @@ import com.samoilov.dev.telegrambotforgmail.service.domain.UserService;
 import com.samoilov.dev.telegrambotforgmail.service.util.ButtonsUtil;
 import com.samoilov.dev.telegrambotforgmail.service.util.MessagesUtil;
 import lombok.RequiredArgsConstructor;
-import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import org.telegram.telegrambots.meta.api.methods.send.SendMessage;
 import org.telegram.telegrambots.meta.api.objects.Update;
@@ -17,7 +15,6 @@ import org.telegram.telegrambots.meta.api.objects.replykeyboard.InlineKeyboardMa
 
 import java.util.List;
 
-@Slf4j
 @Service
 @RequiredArgsConstructor
 public class GmailBotService {
@@ -44,10 +41,7 @@ public class GmailBotService {
                 )
         );
         String firstName = savedUser.getFirstName();
-
-        GmailDto gmailDto = gmailService.getGmail(String.valueOf(savedUser.getTelegramId()));
-
-        log.info("Chat id: {}", chatId);
+        String authorizationUrl = gmailService.getAuthorizationUrl(chatId);
 
         userService.incrementCommandCounter(savedUser.getTelegramId());
 
@@ -55,12 +49,12 @@ public class GmailBotService {
             case START -> this.getStartMessage(
                     firstName.concat(" ").concat(savedUser.getLastName()),
                     chatId,
-                    gmailDto.getAuthorizationUrl()
+                    authorizationUrl
             );
             case INFO -> this.getInfoMessage(chatId);
             case COMMANDS -> this.getCommandsMessage(chatId);
             case ERROR -> this.getErrorMessage(chatId);
-            case AUTHTORIZE -> this.getAuthorizeMessage(chatId, gmailDto.getAuthorizationUrl());
+            case AUTHTORIZE -> this.getAuthorizeMessage(chatId, authorizationUrl);
         };
     }
 
