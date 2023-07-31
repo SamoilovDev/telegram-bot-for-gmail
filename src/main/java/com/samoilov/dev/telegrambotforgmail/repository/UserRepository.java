@@ -18,6 +18,11 @@ public interface UserRepository extends JpaRepository<UserEntity, String> {
     @Query("UPDATE UserEntity u SET u.commandCounter = u.commandCounter + 1 WHERE u.telegramId = :telegramId")
     void incrementCount(@Param("telegramId") Long telegramId);
 
+    @Modifying
+    @Transactional
+    @Query("UPDATE UserEntity u SET u.activeType = 'DISABLED' WHERE u.telegramId = :telegramId")
+    void disableUser(@Param("telegramId") Long telegramId);
+
     boolean existsByTelegramId(Long telegramId);
 
     Optional<UserEntity> findByTelegramId(Long telegramId);

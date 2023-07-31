@@ -1,6 +1,6 @@
 package com.samoilov.dev.telegrambotforgmail.service;
 
-import com.samoilov.dev.telegrambotforgmail.component.UserCredentialsMapper;
+import com.samoilov.dev.telegrambotforgmail.dto.UpdateInformationDto;
 import com.samoilov.dev.telegrambotforgmail.dto.UserDto;
 import com.samoilov.dev.telegrambotforgmail.enums.CommandType;
 import com.samoilov.dev.telegrambotforgmail.service.domain.GmailService;
@@ -10,6 +10,8 @@ import com.samoilov.dev.telegrambotforgmail.service.util.MessagesUtil;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.telegram.telegrambots.meta.api.methods.send.SendMessage;
+import org.telegram.telegrambots.meta.api.objects.CallbackQuery;
+import org.telegram.telegrambots.meta.api.objects.Message;
 import org.telegram.telegrambots.meta.api.objects.Update;
 import org.telegram.telegrambots.meta.api.objects.replykeyboard.InlineKeyboardMarkup;
 
@@ -23,38 +25,23 @@ public class GmailBotService {
 
     private final GmailService gmailService;
 
-    private final UserCredentialsMapper userCredentialsMapper;
-
     public SendMessage getResponseMessage(Update update) {
-        String message = update.hasMessage()
-                ? update.getMessage().getText()
-                : update.getCallbackQuery().getData();
-        Long chatId = update.hasMessage()
-                ? update.getMessage().getChatId()
-                : update.getCallbackQuery().getMessage().getChatId();
-
-        UserDto savedUser = userCredentialsMapper.mapEntityToDto(
-                userService.saveNewUser(
-                        update.hasMessage()
-                                ? update.getMessage().getFrom()
-                                : update.getCallbackQuery().getFrom()
-                )
-        );
-        String firstName = savedUser.getFirstName();
-        String authorizationUrl = gmailService.getAuthorizationUrl(chatId);
+        UpdateInformationDto preparedUpdate = this.prepareUpdate(update);
+        UserDto savedUser = userService.saveUser(preparedUpdate.getUser());
+        String authorizationUrl = gmailService.getAuthorizationUrl(preparedUpdate.getChatId());
 
         userService.incrementCommandCounter(savedUser.getTelegramId());
 
-        return switch (CommandType.parseCommand(message.split("\\s+")[0])) {
+        return switch (CommandType.parseCommand(preparedUpdate.getMessage().split("\\s+")[0])) {
             case START -> this.getStartMessage(
-                    firstName.concat(" ").concat(savedUser.getLastName()),
-                    chatId,
+                    savedUser.getFirstName().concat(" ").concat(savedUser.getLastName()),
+                    preparedUpdate.getChatId(),
                     authorizationUrl
             );
-            case INFO -> this.getInfoMessage(chatId);
-            case COMMANDS -> this.getCommandsMessage(chatId);
-            case ERROR -> this.getErrorMessage(chatId);
-            case AUTHTORIZE -> this.getAuthorizeMessage(chatId, authorizationUrl);
+            case INFO -> this.getInfoMessage(preparedUpdate.getChatId());
+            case COMMANDS -> this.getCommandsMessage(preparedUpdate.getChatId());
+            case ERROR -> this.getErrorMessage(preparedUpdate.getChatId());
+            case AUTHTORIZE -> this.getAuthorizeMessage(preparedUpdate.getChatId(), authorizationUrl);
         };
     }
 
@@ -114,6 +101,26 @@ public class GmailBotService {
                 .chatId(chatId)
                 .text(MessagesUtil.ERROR)
                 .build();
+    }
+
+    private UpdateInformationDto prepareUpdate(Update update) {
+        if (update.hasMessage()) {
+            Message message = update.getMessage();
+            return UpdateInformationDto
+                    .builder()
+                    .chatId(message.getChatId())
+                    .message(message.getText())
+                    .user(message.getFrom())
+                    .build();
+        } else {
+            CallbackQuery callbackQuery = update.getCallbackQuery();
+            return UpdateInformationDto
+                    .builder()
+                    .chatId(callbackQuery.getMessage().getChatId())
+                    .message(callbackQuery.getData())
+                    .user(callbackQuery.getFrom())
+                    .build();
+        }
     }
 
 }
