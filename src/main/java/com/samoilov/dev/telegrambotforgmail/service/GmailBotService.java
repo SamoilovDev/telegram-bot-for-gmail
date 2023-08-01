@@ -1,11 +1,11 @@
 package com.samoilov.dev.telegrambotforgmail.service;
 
-import com.samoilov.dev.telegrambotforgmail.dto.AuthenticationInfoDto;
+import com.google.api.services.gmail.Gmail;
 import com.samoilov.dev.telegrambotforgmail.dto.UpdateInformationDto;
 import com.samoilov.dev.telegrambotforgmail.dto.UserDto;
 import com.samoilov.dev.telegrambotforgmail.enums.CommandType;
+import com.samoilov.dev.telegrambotforgmail.service.domain.GmailConnectionService;
 import com.samoilov.dev.telegrambotforgmail.service.domain.GmailService;
-import com.samoilov.dev.telegrambotforgmail.service.domain.GmailStorageService;
 import com.samoilov.dev.telegrambotforgmail.service.domain.UserService;
 import com.samoilov.dev.telegrambotforgmail.service.util.ButtonsUtil;
 import com.samoilov.dev.telegrambotforgmail.service.util.MessagesUtil;
@@ -16,7 +16,6 @@ import org.telegram.telegrambots.meta.api.methods.send.SendMessage;
 import org.telegram.telegrambots.meta.api.objects.replykeyboard.InlineKeyboardMarkup;
 
 import java.util.List;
-import java.util.Objects;
 
 @Slf4j
 @Service
@@ -25,21 +24,16 @@ public class GmailBotService {
 
     private final UserService userService;
 
-    private final GmailService gmailService;
+    private final GmailConnectionService gmailConnectionService;
 
-    private final GmailStorageService gmailStorageService;
+    private final GmailService gmailService;
 
     public SendMessage getResponseMessage(UpdateInformationDto preparedUpdate) {
         UserDto savedUser = userService.saveUser(preparedUpdate.getUser());
         Long chatId = preparedUpdate.getChatId();
-        String authorizationUrl = gmailService.getAuthorizationUrl(chatId);
-        AuthenticationInfoDto usersGmail = gmailStorageService.getGmailByChatId(chatId);
+        String authorizationUrl = gmailConnectionService.getAuthorizationUrl(chatId);
 
         userService.incrementCommandCounter(savedUser.getTelegramId());
-
-        if (Objects.isNull(usersGmail)) {
-            return this.getAuthorizeMessage(chatId, authorizationUrl);
-        }
 
         return switch (CommandType.parseCommand(preparedUpdate.getMessage().split("\\s+")[0])) {
             case START -> this.getStartMessage(
@@ -49,26 +43,10 @@ public class GmailBotService {
             );
             case INFO -> this.getInfoMessage(chatId);
             case COMMANDS -> this.getCommandsMessage(chatId);
-            case ERROR -> this.getErrorMessage(chatId);
             case AUTHORIZE -> this.getAuthorizeMessage(chatId, authorizationUrl);
+            case GMAIL -> this.getGmailMessage(chatId);
+            case ERROR -> this.getErrorMessage(chatId);
         };
-    }
-
-    public SendMessage getAuthorizeMessage(Long chatId, String authorizationUrl) {
-        InlineKeyboardMarkup keyboardMarkup = ButtonsUtil.getButtonsByCommands(
-                        List.of(
-                                CommandType.COMMANDS.getCommand(),
-                                CommandType.INFO.getCommand(),
-                                CommandType.AUTHORIZE.getCommand().concat(authorizationUrl)
-                        )
-                );
-
-        return SendMessage
-                .builder()
-                .chatId(chatId)
-                .text(MessagesUtil.AUTHORIZE)
-                .replyMarkup(keyboardMarkup)
-                .build();
     }
 
     public SendMessage getStartMessage(Long chatId, String fullName, String authorizationUrl) {
@@ -79,12 +57,34 @@ public class GmailBotService {
                 .replyMarkup(
                         ButtonsUtil.getButtonsByCommands(
                                 List.of(
-                                        CommandType.AUTHORIZE.getCommand().concat(authorizationUrl),
+                                        CommandType.AUTHORIZE.getCommand().concat(" ").concat(authorizationUrl),
                                         CommandType.COMMANDS.getCommand(),
                                         CommandType.INFO.getCommand()
                                 )
                         )
                 )
+                .build();
+    }
+
+    public SendMessage getGmailMessage(Long chatId) {
+        Gmail gmail = gmailConnectionService.getGmail(chatId);
+        return null;
+    }
+
+    public SendMessage getAuthorizeMessage(Long chatId, String authorizationUrl) {
+        InlineKeyboardMarkup keyboardMarkup = ButtonsUtil.getButtonsByCommands(
+                        List.of(
+                                CommandType.AUTHORIZE.getCommand().concat(authorizationUrl),
+                                CommandType.COMMANDS.getCommand(),
+                                CommandType.INFO.getCommand()
+                        )
+                );
+
+        return SendMessage
+                .builder()
+                .chatId(chatId)
+                .text(MessagesUtil.AUTHORIZE)
+                .replyMarkup(keyboardMarkup)
                 .build();
     }
 

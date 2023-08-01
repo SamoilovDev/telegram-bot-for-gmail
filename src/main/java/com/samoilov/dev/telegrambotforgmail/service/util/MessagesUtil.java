@@ -32,4 +32,8 @@ public class MessagesUtil {
             Sorry, I don't understand you.
             """;
 
+    public static final String SUCCESS_AUTHORIZATION = """
+            You have successfully authorized me. Now you can send emails from your Gmail account.
+            """;
+
 }

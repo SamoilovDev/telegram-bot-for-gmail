@@ -13,7 +13,9 @@ public enum CommandType {
 
     COMMANDS("/commands"),
 
-    AUTHORIZE("/authorize "),
+    AUTHORIZE("/authorize"),
+
+    GMAIL("/gmail"),
 
     ERROR("-");
 

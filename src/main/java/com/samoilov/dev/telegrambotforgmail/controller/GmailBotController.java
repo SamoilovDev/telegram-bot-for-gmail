@@ -6,6 +6,7 @@ import com.samoilov.dev.telegrambotforgmail.dto.UpdateInformationDto;
 import com.samoilov.dev.telegrambotforgmail.service.GmailBotService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.context.event.EventListener;
 import org.springframework.stereotype.Controller;
 import org.telegram.telegrambots.bots.TelegramLongPollingBot;
 import org.telegram.telegrambots.meta.api.methods.send.SendMessage;
@@ -23,18 +24,21 @@ public class GmailBotController extends TelegramLongPollingBot {
 
     private final GmailBotService gmailBotService;
 
-    @Override
-    public void onUpdateReceived(Update update) {
+    @EventListener(SendMessage.class)
+    public void sendMessage(SendMessage responseMessage) {
         try {
-            UpdateInformationDto preparedUpdate = telegramInformationMapper.mapFullUpdateToInformationDto(update);
-            SendMessage responseMessage = gmailBotService.getResponseMessage(preparedUpdate);
-
             super.executeAsync(responseMessage);
-
             log.info("Message '{}' was send to chat with id {}", responseMessage.getText(), responseMessage.getChatId());
         } catch (TelegramApiException e) {
             log.warn(e.getMessage());
         }
+    }
+
+    @Override
+    public void onUpdateReceived(Update update) {
+        UpdateInformationDto preparedUpdate = telegramInformationMapper.mapFullUpdateToInformationDto(update);
+        SendMessage responseMessage = gmailBotService.getResponseMessage(preparedUpdate);
+        this.sendMessage(responseMessage);
     }
 
     @Override
