@@ -6,7 +6,6 @@ import com.google.api.client.googleapis.auth.oauth2.GoogleAuthorizationCodeToken
 import com.google.api.client.googleapis.auth.oauth2.GoogleClientSecrets;
 import com.google.api.client.googleapis.auth.oauth2.GoogleCredential;
 import com.google.api.client.googleapis.auth.oauth2.GoogleTokenResponse;
-import com.google.api.client.googleapis.javanet.GoogleNetHttpTransport;
 import com.google.api.client.http.javanet.NetHttpTransport;
 import com.google.api.client.json.JsonFactory;
 import com.google.api.client.util.store.FileDataStoreFactory;
@@ -20,7 +19,6 @@ import org.springframework.stereotype.Service;
 
 import java.io.File;
 import java.io.IOException;
-import java.security.GeneralSecurityException;
 import java.util.List;
 
 @Slf4j
@@ -40,28 +38,30 @@ public class GmailService {
 
     public String getAuthorizationUrl(Long chatId) {
         try {
-            NetHttpTransport httpTransport = GoogleNetHttpTransport.newTrustedTransport();
-            GoogleAuthorizationCodeFlow flow = new GoogleAuthorizationCodeFlow
-                    .Builder(httpTransport, jsonFactory, googleClientSecrets, scopes)
+            return new GoogleAuthorizationCodeFlow
+                    .Builder(netHttpTransport, jsonFactory, googleClientSecrets, scopes)
                     .setDataStoreFactory(
                             new FileDataStoreFactory(
                                     new File(googleProperties.getTokensPath())
                             )
                     )
                     .setAccessType("offline")
-                    .build();
-
-            return flow
+                    .build()
                     .newAuthorizationUrl()
                     .setRedirectUri("http://localhost:8080/oauth2callback/".concat(String.valueOf(chatId)))
                     .build();
-        } catch (IOException | NullPointerException | GeneralSecurityException e) {
+        } catch (IOException | NullPointerException e) {
             throw new AuthorizationUrlCreatingException(e);
         }
     }
 
+    public Gmail getGmail(String authCode, String redirectUri) {
+        Credential credentials = this.exchangeCode(authCode, redirectUri);
+        return this.createGmailService(credentials);
+    }
+
     @SuppressWarnings("deprecation")
-    public Credential exchangeCode(String authCode, String redirectUri) {
+    private Credential exchangeCode(String authCode, String redirectUri) {
         try {
             GoogleTokenResponse response = new GoogleAuthorizationCodeTokenRequest(
                     netHttpTransport,
@@ -85,7 +85,7 @@ public class GmailService {
         }
     }
 
-    public Gmail createGmailService(Credential credential) {
+    private Gmail createGmailService(Credential credential) {
         return new Gmail.Builder(netHttpTransport, jsonFactory, credential)
                 .setApplicationName(googleProperties.getApplicationName())
                 .build();

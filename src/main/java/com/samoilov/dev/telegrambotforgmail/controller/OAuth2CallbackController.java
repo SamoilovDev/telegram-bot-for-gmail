@@ -1,9 +1,6 @@
 package com.samoilov.dev.telegrambotforgmail.controller;
 
-import com.google.api.client.auth.oauth2.Credential;
-import com.google.api.services.gmail.Gmail;
-import com.samoilov.dev.telegrambotforgmail.dto.GmailDto;
-import com.samoilov.dev.telegrambotforgmail.service.domain.GmailService;
+import com.samoilov.dev.telegrambotforgmail.dto.AuthenticationInfoDto;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import lombok.RequiredArgsConstructor;
@@ -21,8 +18,6 @@ import java.io.IOException;
 @RequiredArgsConstructor
 public class OAuth2CallbackController {
 
-    private final GmailService gmailService;
-
     private final ApplicationEventPublisher eventPublisher;
 
     @GetMapping("/oauth2callback/{chatId}")
@@ -32,11 +27,13 @@ public class OAuth2CallbackController {
             HttpServletRequest request,
             HttpServletResponse response) {
         try {
-            Credential credential = gmailService.exchangeCode(authorizationCode, request.getRequestURL().toString());
-            Gmail gmail = gmailService.createGmailService(credential);
-
             eventPublisher.publishEvent(
-                    GmailDto.builder().gmail(gmail).chatId(chatId).build()
+                    AuthenticationInfoDto
+                            .builder()
+                            .authCode(authorizationCode)
+                            .redirectUri(request.getRequestURL().toString())
+                            .chatId(chatId)
+                            .build()
             );
 
             response.sendRedirect("https://t.me/GmailCheckerBot");

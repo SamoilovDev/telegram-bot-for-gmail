@@ -24,7 +24,7 @@ public class MessagesUtil {
             """;
 
     public static final String INFO = """
-            This bot was created by @samoilov_dev.
+            This bot was created by @samoilov_vl.
             """;
 
     public static final String ERROR = """

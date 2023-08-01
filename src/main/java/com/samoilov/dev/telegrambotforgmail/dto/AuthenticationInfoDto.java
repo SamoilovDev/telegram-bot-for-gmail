@@ -1,6 +1,5 @@
 package com.samoilov.dev.telegrambotforgmail.dto;
 
-import com.google.api.services.gmail.Gmail;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
@@ -10,10 +9,12 @@ import lombok.NoArgsConstructor;
 @Builder
 @NoArgsConstructor
 @AllArgsConstructor
-public class GmailDto {
+public class AuthenticationInfoDto {
 
     private Long chatId;
 
-    private Gmail gmail;
+    private String authCode;
+
+    private String redirectUri;
 
 }

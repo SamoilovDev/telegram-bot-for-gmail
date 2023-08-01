@@ -1,6 +1,8 @@
 package com.samoilov.dev.telegrambotforgmail.controller;
 
+import com.samoilov.dev.telegrambotforgmail.component.TelegramInformationMapper;
 import com.samoilov.dev.telegrambotforgmail.config.properties.TelegramProperties;
+import com.samoilov.dev.telegrambotforgmail.dto.UpdateInformationDto;
 import com.samoilov.dev.telegrambotforgmail.service.GmailBotService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -15,6 +17,8 @@ import org.telegram.telegrambots.meta.exceptions.TelegramApiException;
 @RequiredArgsConstructor
 public class GmailBotController extends TelegramLongPollingBot {
 
+    private final TelegramInformationMapper telegramInformationMapper;
+
     private final TelegramProperties telegramProperties;
 
     private final GmailBotService gmailBotService;
@@ -22,8 +26,11 @@ public class GmailBotController extends TelegramLongPollingBot {
     @Override
     public void onUpdateReceived(Update update) {
         try {
-            SendMessage responseMessage = gmailBotService.getResponseMessage(update);
-            super.execute(responseMessage);
+            UpdateInformationDto preparedUpdate = telegramInformationMapper.mapFullUpdateToInformationDto(update);
+            SendMessage responseMessage = gmailBotService.getResponseMessage(preparedUpdate);
+
+            super.executeAsync(responseMessage);
+
             log.info("Message '{}' was send to chat with id {}", responseMessage.getText(), responseMessage.getChatId());
         } catch (TelegramApiException e) {
             log.warn(e.getMessage());
