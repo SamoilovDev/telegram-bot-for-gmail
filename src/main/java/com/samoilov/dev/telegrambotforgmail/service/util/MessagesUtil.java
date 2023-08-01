@@ -21,6 +21,7 @@ public class MessagesUtil {
             /start - start the bot
             /info - information about the bot
             /commands - list of all commands
+            /authorize - get authorization link
             """;
 
     public static final String INFO = """

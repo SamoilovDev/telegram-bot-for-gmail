@@ -13,7 +13,7 @@ public enum CommandType {
 
     COMMANDS("/commands"),
 
-    AUTHTORIZE("/authorize "),
+    AUTHORIZE("/authorize "),
 
     ERROR("-");
 

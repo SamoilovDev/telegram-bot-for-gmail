@@ -34,36 +34,4 @@ public class RedisConfig {
         return redisTemplate;
     }
 
-//    class GmailSerializer implements RedisSerializer<Gmail> {
-//
-//        @Override
-//        public byte[] serialize(Gmail gmail) throws SerializationException {
-//            try {
-//                return objectMapper.writeValueAsBytes(gmail);
-//            } catch (JsonProcessingException e) {
-//                throw new SerializationException(e.getMessage(), e);
-//            }
-//        }
-//
-//        @Override
-//        public Gmail deserialize(byte[] bytes) throws SerializationException {
-//            if (Objects.isNull(bytes) || bytes.length == 0) {
-//                return null;
-//            }
-//
-//            try {
-//                return objectMapper.readValue(bytes, Gmail.class);
-//            } catch (IOException e) {
-//                throw new SerializationException(e.getMessage(), e);
-//            }
-//        }
-//
-//        @NonNull
-//        @Override
-//        public Class<Gmail> getTargetType() {
-//            return Gmail.class;
-//        }
-//
-//    }
-
 }

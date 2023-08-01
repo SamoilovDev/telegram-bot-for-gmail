@@ -10,6 +10,7 @@ import com.samoilov.dev.telegrambotforgmail.service.domain.UserService;
 import com.samoilov.dev.telegrambotforgmail.service.util.ButtonsUtil;
 import com.samoilov.dev.telegrambotforgmail.service.util.MessagesUtil;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import org.telegram.telegrambots.meta.api.methods.send.SendMessage;
 import org.telegram.telegrambots.meta.api.objects.replykeyboard.InlineKeyboardMarkup;
@@ -17,6 +18,7 @@ import org.telegram.telegrambots.meta.api.objects.replykeyboard.InlineKeyboardMa
 import java.util.List;
 import java.util.Objects;
 
+@Slf4j
 @Service
 @RequiredArgsConstructor
 public class GmailBotService {
@@ -48,7 +50,7 @@ public class GmailBotService {
             case INFO -> this.getInfoMessage(chatId);
             case COMMANDS -> this.getCommandsMessage(chatId);
             case ERROR -> this.getErrorMessage(chatId);
-            case AUTHTORIZE -> this.getAuthorizeMessage(chatId, authorizationUrl);
+            case AUTHORIZE -> this.getAuthorizeMessage(chatId, authorizationUrl);
         };
     }
 
@@ -57,7 +59,7 @@ public class GmailBotService {
                         List.of(
                                 CommandType.COMMANDS.getCommand(),
                                 CommandType.INFO.getCommand(),
-                                CommandType.AUTHTORIZE.getCommand().concat(authorizationUrl)
+                                CommandType.AUTHORIZE.getCommand().concat(authorizationUrl)
                         )
                 );
 
@@ -77,7 +79,7 @@ public class GmailBotService {
                 .replyMarkup(
                         ButtonsUtil.getButtonsByCommands(
                                 List.of(
-                                        CommandType.AUTHTORIZE.getCommand().concat(authorizationUrl),
+                                        CommandType.AUTHORIZE.getCommand().concat(authorizationUrl),
                                         CommandType.COMMANDS.getCommand(),
                                         CommandType.INFO.getCommand()
                                 )
