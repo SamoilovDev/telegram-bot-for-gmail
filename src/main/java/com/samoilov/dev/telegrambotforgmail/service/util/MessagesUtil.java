@@ -13,10 +13,6 @@ public class MessagesUtil {
            (Or click on the buttons below)
            """;
 
-    public static final String AUTHORIZE = """
-             To start using me you need to authorize me. To do this go to the link below and follow the instructions.
-             """;
-
     public static final String COMMANDS = """
             /start - start the bot
             /info - information about the bot
@@ -28,12 +24,32 @@ public class MessagesUtil {
             This bot was created by @samoilov_vl.
             """;
 
-    public static final String ERROR = """
-            Sorry, I don't understand you.
-            """;
+    public static final String AUTHORIZE = """
+             To start using me you need to authorize me. To do this go to the link below and follow the instructions.
+             """;
 
     public static final String SUCCESS_AUTHORIZATION = """
             You have successfully authorized me. Now you can send emails from your Gmail account.
+            """;
+
+    public static final String GMAIL = """
+            To get messages from your Gmail account click on the button below message.
+            """;
+
+    public static final String SEND = """
+            -
+            """;
+
+    public static final String GET = """
+            To get messages from your Gmail account choose and click on the button below message.
+            """;
+
+    public static final String GET_FINISH = """
+            You have successfully got last messages from your Gmail account at this category.
+            """;
+
+    public static final String ERROR = """
+            Sorry, I don't understand you.
             """;
 
 }

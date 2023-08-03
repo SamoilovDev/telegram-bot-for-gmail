@@ -9,13 +9,17 @@ public enum CommandType {
 
     START("/start"),
 
-    INFO("/info"),
+    AUTHORIZE("/authorize"),
 
     COMMANDS("/commands"),
 
-    AUTHORIZE("/authorize"),
+    INFO("/info"),
 
     GMAIL("/gmail"),
+
+    SEND("/send"),
+
+    GET("/get"),
 
     ERROR("-");
 

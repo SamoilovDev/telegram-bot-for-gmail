@@ -1,6 +1,6 @@
 package com.samoilov.dev.telegrambotforgmail.service.domain;
 
-import com.samoilov.dev.telegrambotforgmail.component.TelegramInformationMapper;
+import com.samoilov.dev.telegrambotforgmail.component.InformationMapper;
 import com.samoilov.dev.telegrambotforgmail.dto.UserDto;
 import com.samoilov.dev.telegrambotforgmail.entity.UserEntity;
 import com.samoilov.dev.telegrambotforgmail.exception.UserNotFoundException;
@@ -13,7 +13,7 @@ import org.telegram.telegrambots.meta.api.objects.User;
 @RequiredArgsConstructor
 public class UserService {
 
-    private final TelegramInformationMapper telegramInformationMapper;
+    private final InformationMapper informationMapper;
 
     private final UserRepository userRepository;
 
@@ -26,11 +26,11 @@ public class UserService {
 
         return foundedUser.getCommandCounter() % 10 == 0
                 ? this.saveChangedUserData(user)
-                : telegramInformationMapper.mapEntityToDto(foundedUser);
+                : informationMapper.mapEntityToDto(foundedUser);
     }
 
     public UserDto getUserByTelegramId(Long telegramId) {
-        return telegramInformationMapper.mapEntityToDto(
+        return informationMapper.mapEntityToDto(
                 this.getUserEntityByTelegramId(telegramId)
         );
     }
@@ -44,9 +44,9 @@ public class UserService {
     }
 
     private UserDto saveChangedUserData(User userToSave) {
-        UserEntity mappedUser = telegramInformationMapper.mapTelegramUserToEntity(userToSave);
+        UserEntity mappedUser = informationMapper.mapTelegramUserToEntity(userToSave);
 
-        return telegramInformationMapper.mapEntityToDto(
+        return informationMapper.mapEntityToDto(
                 userRepository.save(mappedUser)
         );
     }

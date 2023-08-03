@@ -14,8 +14,10 @@ import com.samoilov.dev.telegrambotforgmail.config.properties.GoogleProperties;
 import com.samoilov.dev.telegrambotforgmail.dto.AuthenticationInfoDto;
 import com.samoilov.dev.telegrambotforgmail.exception.AuthorizationUrlCreatingException;
 import com.samoilov.dev.telegrambotforgmail.exception.GmailException;
+import com.samoilov.dev.telegrambotforgmail.service.util.ButtonsUtil;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.cache.annotation.Cacheable;
 import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.stereotype.Service;
 import org.telegram.telegrambots.meta.api.methods.send.SendMessage;
@@ -58,26 +60,21 @@ public class GmailConnectionService {
                     .setRedirectUri("http://localhost:8080/oauth2callback/".concat(String.valueOf(chatId)))
                     .build();
         } catch (IOException | NullPointerException e) {
-            eventPublisher.publishEvent(
-                    SendMessage
-                            .builder()
-                            .text("Sorry, internal error during authorization, please try again later.")
-                            .chatId(chatId)
-                            .build()
-            );
+            this.sendErrorResponse(chatId);
             throw new AuthorizationUrlCreatingException(e);
         }
     }
 
+    @Cacheable(cacheNames = "gmail", key = "#chatId")
     public Gmail getGmail(Long chatId) {
         AuthenticationInfoDto usersGmail = gmailStorageService.getAuthInfoByChatId(chatId);
-        Credential credentials = this.exchangeCode(usersGmail.getAuthCode(), usersGmail.getRedirectUri());
+        Credential credentials = this.exchangeCode(usersGmail.getAuthCode(), usersGmail.getRedirectUri(), chatId);
         return this.createGmailService(credentials);
     }
 
 
     @SuppressWarnings("deprecation")
-    private Credential exchangeCode(String authCode, String redirectUri) {
+    private Credential exchangeCode(String authCode, String redirectUri, Long chatId) {
         try {
             GoogleTokenResponse response = new GoogleAuthorizationCodeTokenRequest(
                     netHttpTransport,
@@ -97,13 +94,7 @@ public class GmailConnectionService {
                     .setAccessToken(response.getAccessToken())
                     .setRefreshToken(response.getRefreshToken());
         } catch (IOException e) {
-            eventPublisher.publishEvent(
-                    SendMessage
-                            .builder()
-                            .text("Sorry, internal error during authorization, please try again later.")
-                            .chatId(0L)
-                            .build()
-            );
+            this.sendErrorResponse(chatId);
             throw new GmailException(e);
         }
     }
@@ -112,6 +103,17 @@ public class GmailConnectionService {
         return new Gmail.Builder(netHttpTransport, jsonFactory, credential)
                 .setApplicationName(googleProperties.getApplicationName())
                 .build();
+    }
+
+    private void sendErrorResponse(Long chatId) {
+        eventPublisher.publishEvent(
+                SendMessage
+                        .builder()
+                        .text("Sorry, internal error during authorization, please try to authorize me again or try again later.")
+                        .chatId(chatId)
+                        .replyMarkup(ButtonsUtil.getReplyKeyboard(false))
+                        .build()
+        );
     }
 
 }

@@ -11,11 +11,9 @@ import com.samoilov.dev.telegrambotforgmail.service.util.ButtonsUtil;
 import com.samoilov.dev.telegrambotforgmail.service.util.MessagesUtil;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.stereotype.Service;
 import org.telegram.telegrambots.meta.api.methods.send.SendMessage;
-import org.telegram.telegrambots.meta.api.objects.replykeyboard.InlineKeyboardMarkup;
-
-import java.util.List;
 
 @Slf4j
 @Service
@@ -24,91 +22,102 @@ public class GmailBotService {
 
     private final UserService userService;
 
-    private final GmailConnectionService gmailConnectionService;
-
     private final GmailService gmailService;
 
+    private final GmailConnectionService gmailConnectionService;
+
+    private final ApplicationEventPublisher eventPublisher;
+
     public SendMessage getResponseMessage(UpdateInformationDto preparedUpdate) {
-        UserDto savedUser = userService.saveUser(preparedUpdate.getUser());
         Long chatId = preparedUpdate.getChatId();
-        String authorizationUrl = gmailConnectionService.getAuthorizationUrl(chatId);
+        String message = preparedUpdate.getMessage();
+        UserDto savedUser = userService.saveUser(preparedUpdate.getUser());
+        CommandType currentCommand = CommandType.parseCommand(message.split("\\s+")[0]);
 
         userService.incrementCommandCounter(savedUser.getTelegramId());
 
-        return switch (CommandType.parseCommand(preparedUpdate.getMessage().split("\\s+")[0])) {
-            case START -> this.getStartMessage(
-                    chatId,
-                    savedUser.getFirstName().concat(" ").concat(savedUser.getLastName()),
-                    authorizationUrl
-            );
-            case INFO -> this.getInfoMessage(chatId);
-            case COMMANDS -> this.getCommandsMessage(chatId);
-            case AUTHORIZE -> this.getAuthorizeMessage(chatId, authorizationUrl);
+        return switch (currentCommand) {
+            case START -> this.getStartMessage(chatId, savedUser.getFirstName());
+            case AUTHORIZE -> this.getAuthorizeMessage(chatId, gmailConnectionService.getAuthorizationUrl(chatId));
             case GMAIL -> this.getGmailMessage(chatId);
-            case ERROR -> this.getErrorMessage(chatId);
+            case SEND -> null;
+            case GET -> this.getEmailReceiveMessage(chatId, message);
+            case INFO, COMMANDS, ERROR -> this.getSimpleResponseMessage(chatId, currentCommand);
         };
     }
 
-    public SendMessage getStartMessage(Long chatId, String fullName, String authorizationUrl) {
+    public SendMessage getStartMessage(Long chatId, String firstName) {
         return SendMessage
                 .builder()
                 .chatId(chatId)
-                .text(MessagesUtil.START.formatted(fullName))
-                .replyMarkup(
-                        ButtonsUtil.getButtonsByCommands(
-                                List.of(
-                                        CommandType.AUTHORIZE.getCommand().concat(" ").concat(authorizationUrl),
-                                        CommandType.COMMANDS.getCommand(),
-                                        CommandType.INFO.getCommand()
-                                )
-                        )
-                )
+                .text(MessagesUtil.START.formatted(firstName))
+                .replyMarkup(ButtonsUtil.getReplyKeyboard(false))
                 .build();
     }
 
-    public SendMessage getGmailMessage(Long chatId) {
-        Gmail gmail = gmailConnectionService.getGmail(chatId);
-        return null;
+    public SendMessage getAuthorizeMessage(Long chatId, String authorizationUrl) {
+        return SendMessage
+                .builder()
+                .chatId(chatId)
+                .text(MessagesUtil.AUTHORIZE)
+                .replyMarkup(ButtonsUtil.getAuthorizeInlineKeyboard(authorizationUrl))
+                .build();
     }
 
-    public SendMessage getAuthorizeMessage(Long chatId, String authorizationUrl) {
-        InlineKeyboardMarkup keyboardMarkup = ButtonsUtil.getButtonsByCommands(
-                        List.of(
-                                CommandType.AUTHORIZE.getCommand().concat(authorizationUrl),
-                                CommandType.COMMANDS.getCommand(),
-                                CommandType.INFO.getCommand()
+    public SendMessage getSimpleResponseMessage(Long chatId, CommandType commandType) {
+        String message = switch (commandType) {
+            case INFO -> MessagesUtil.INFO;
+            case COMMANDS -> MessagesUtil.COMMANDS;
+            case ERROR -> MessagesUtil.ERROR;
+            default -> throw new IllegalStateException("Unexpected value: " + commandType);
+        };
+
+        return SendMessage.builder().chatId(chatId).text(message).build();
+    }
+
+    public SendMessage getGmailMessage(Long chatId) {
+        return SendMessage
+                .builder()
+                .chatId(chatId)
+                .text(MessagesUtil.GMAIL)
+                .replyMarkup(ButtonsUtil.getGmailMainKeyboard())
+                .build();
+    }
+
+    public SendMessage getSendEmailMessage(Long chatId) {
+        Gmail gmail = gmailConnectionService.getGmail(chatId);
+        return SendMessage.builder().chatId(chatId).text(MessagesUtil.SEND).build();
+    }
+
+    public SendMessage getEmailReceiveMessage(Long chatId, String message) {
+        String[] splitMessage = message.split("\\s+");
+        if (splitMessage.length == 1) {
+            return SendMessage
+                    .builder()
+                    .chatId(chatId)
+                    .text(MessagesUtil.GET)
+                    .replyMarkup(ButtonsUtil.getGmailMessageReceiveKeyboard())
+                    .build();
+        }
+
+        Gmail gmail = gmailConnectionService.getGmail(chatId);
+        String query = splitMessage.length > 2
+                ? splitMessage[1].concat(splitMessage[2])
+                : splitMessage[1];
+
+        gmailService
+                .getMessagesByQuery(gmail, query, chatId)
+                .forEach(receivedEmail -> eventPublisher
+                        .publishEvent(
+                                SendMessage.builder().chatId(chatId).text(receivedEmail).build()
                         )
                 );
 
         return SendMessage
                 .builder()
                 .chatId(chatId)
-                .text(MessagesUtil.AUTHORIZE)
-                .replyMarkup(keyboardMarkup)
-                .build();
-    }
-
-    public SendMessage getCommandsMessage(Long chatId) {
-        return SendMessage
-                .builder()
-                .chatId(chatId)
-                .text(MessagesUtil.COMMANDS)
-                .build();
-    }
-
-    public SendMessage getInfoMessage(Long chatId) {
-        return SendMessage
-                .builder()
-                .chatId(chatId)
-                .text(MessagesUtil.INFO)
-                .build();
-    }
-
-    public SendMessage getErrorMessage(Long chatId) {
-        return SendMessage
-                .builder()
-                .chatId(chatId)
-                .text(MessagesUtil.ERROR)
+                .text(MessagesUtil.GET_FINISH)
+                .replyMarkup(ButtonsUtil.getGmailMessageReceiveKeyboard())
                 .build();
     }
 

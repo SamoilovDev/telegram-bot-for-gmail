@@ -10,6 +10,9 @@ import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.stereotype.Service;
 import org.telegram.telegrambots.meta.api.methods.send.SendMessage;
 
+import java.util.List;
+import java.util.Objects;
+
 @Service
 @RequiredArgsConstructor
 public class GmailStorageService {
@@ -20,6 +23,10 @@ public class GmailStorageService {
 
     @EventListener(AuthenticationInfoDto.class)
     public void handleAndSaveAuthInfoDto(AuthenticationInfoDto authenticationInfoDto) {
+        if (Objects.nonNull(this.getAuthInfoByChatId(authenticationInfoDto.getChatId()))) {
+            redisTemplate.delete(List.of(authenticationInfoDto.getChatId()));
+        }
+
         redisTemplate
                 .opsForValue()
                 .set(authenticationInfoDto.getChatId(), authenticationInfoDto);
@@ -29,13 +36,15 @@ public class GmailStorageService {
                         .builder()
                         .chatId(authenticationInfoDto.getChatId())
                         .text(MessagesUtil.SUCCESS_AUTHORIZATION)
-                        .replyMarkup(ButtonsUtil.getGmailKeyboard())
+                        .replyMarkup(ButtonsUtil.getReplyKeyboard(true))
                         .build()
         );
     }
 
     public AuthenticationInfoDto getAuthInfoByChatId(Long chatId) {
-        return redisTemplate.opsForValue().get(chatId);
+        return redisTemplate
+                .opsForValue()
+                .get(chatId);
     }
 
 }

@@ -1,6 +1,6 @@
 package com.samoilov.dev.telegrambotforgmail.controller;
 
-import com.samoilov.dev.telegrambotforgmail.component.TelegramInformationMapper;
+import com.samoilov.dev.telegrambotforgmail.component.InformationMapper;
 import com.samoilov.dev.telegrambotforgmail.config.properties.TelegramProperties;
 import com.samoilov.dev.telegrambotforgmail.dto.UpdateInformationDto;
 import com.samoilov.dev.telegrambotforgmail.service.GmailBotService;
@@ -18,7 +18,7 @@ import org.telegram.telegrambots.meta.exceptions.TelegramApiException;
 @RequiredArgsConstructor
 public class GmailBotController extends TelegramLongPollingBot {
 
-    private final TelegramInformationMapper telegramInformationMapper;
+    private final InformationMapper informationMapper;
 
     private final TelegramProperties telegramProperties;
 
@@ -36,7 +36,7 @@ public class GmailBotController extends TelegramLongPollingBot {
 
     @Override
     public void onUpdateReceived(Update update) {
-        UpdateInformationDto preparedUpdate = telegramInformationMapper.mapFullUpdateToInformationDto(update);
+        UpdateInformationDto preparedUpdate = informationMapper.mapFullUpdateToInformationDto(update);
         SendMessage responseMessage = gmailBotService.getResponseMessage(preparedUpdate);
         this.sendMessage(responseMessage);
     }
