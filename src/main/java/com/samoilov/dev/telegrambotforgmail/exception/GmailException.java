@@ -8,4 +8,8 @@ public class GmailException extends RuntimeException {
         super(REASON, ex);
     }
 
+    public GmailException() {
+        super(REASON);
+    }
+
 }

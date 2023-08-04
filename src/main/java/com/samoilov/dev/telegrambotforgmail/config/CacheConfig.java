@@ -6,6 +6,7 @@ import org.springframework.cache.annotation.EnableCaching;
 import org.springframework.cache.caffeine.CaffeineCacheManager;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.context.annotation.Primary;
 
 import java.util.List;
 import java.util.concurrent.TimeUnit;
@@ -15,7 +16,8 @@ import java.util.concurrent.TimeUnit;
 public class CacheConfig {
 
     public static final List<String> CACHE_NAMES = List.of(
-            "gmail"
+            "gmail",
+            "authenticationInfo"
     );
 
     @Bean
@@ -28,6 +30,7 @@ public class CacheConfig {
     }
 
     @Bean
+    @Primary
     public CacheManager cacheManager(Caffeine<Object, Object> caffeine) {
         CaffeineCacheManager caffeineCacheManager = new CaffeineCacheManager();
         caffeineCacheManager.setCaffeine(caffeine);

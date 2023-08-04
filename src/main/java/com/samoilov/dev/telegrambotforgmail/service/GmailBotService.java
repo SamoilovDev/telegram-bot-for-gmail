@@ -4,6 +4,7 @@ import com.google.api.services.gmail.Gmail;
 import com.samoilov.dev.telegrambotforgmail.dto.UpdateInformationDto;
 import com.samoilov.dev.telegrambotforgmail.dto.UserDto;
 import com.samoilov.dev.telegrambotforgmail.enums.CommandType;
+import com.samoilov.dev.telegrambotforgmail.service.domain.GmailCacheService;
 import com.samoilov.dev.telegrambotforgmail.service.domain.GmailConnectionService;
 import com.samoilov.dev.telegrambotforgmail.service.domain.GmailService;
 import com.samoilov.dev.telegrambotforgmail.service.domain.UserService;
@@ -24,6 +25,8 @@ public class GmailBotService {
 
     private final GmailService gmailService;
 
+    private final GmailCacheService gmailCacheService;
+
     private final GmailConnectionService gmailConnectionService;
 
     private final ApplicationEventPublisher eventPublisher;
@@ -40,15 +43,14 @@ public class GmailBotService {
             case START -> this.getStartMessage(chatId, savedUser.getFirstName());
             case AUTHORIZE -> this.getAuthorizeMessage(chatId, gmailConnectionService.getAuthorizationUrl(chatId));
             case GMAIL -> this.getGmailMessage(chatId);
-            case SEND -> null;
+            case SEND -> this.getSendEmailMessage(chatId);
             case GET -> this.getEmailReceiveMessage(chatId, message);
             case INFO, COMMANDS, ERROR -> this.getSimpleResponseMessage(chatId, currentCommand);
         };
     }
 
     public SendMessage getStartMessage(Long chatId, String firstName) {
-        return SendMessage
-                .builder()
+        return SendMessage.builder()
                 .chatId(chatId)
                 .text(MessagesUtil.START.formatted(firstName))
                 .replyMarkup(ButtonsUtil.getReplyKeyboard(false))
@@ -56,8 +58,7 @@ public class GmailBotService {
     }
 
     public SendMessage getAuthorizeMessage(Long chatId, String authorizationUrl) {
-        return SendMessage
-                .builder()
+        return SendMessage.builder()
                 .chatId(chatId)
                 .text(MessagesUtil.AUTHORIZE)
                 .replyMarkup(ButtonsUtil.getAuthorizeInlineKeyboard(authorizationUrl))
@@ -72,12 +73,14 @@ public class GmailBotService {
             default -> throw new IllegalStateException("Unexpected value: " + commandType);
         };
 
-        return SendMessage.builder().chatId(chatId).text(message).build();
+        return SendMessage.builder()
+                .chatId(chatId)
+                .text(message)
+                .build();
     }
 
     public SendMessage getGmailMessage(Long chatId) {
-        return SendMessage
-                .builder()
+        return SendMessage.builder()
                 .chatId(chatId)
                 .text(MessagesUtil.GMAIL)
                 .replyMarkup(ButtonsUtil.getGmailMainKeyboard())
@@ -85,36 +88,38 @@ public class GmailBotService {
     }
 
     public SendMessage getSendEmailMessage(Long chatId) {
-        Gmail gmail = gmailConnectionService.getGmail(chatId);
-        return SendMessage.builder().chatId(chatId).text(MessagesUtil.SEND).build();
+        Gmail gmail = gmailCacheService.getGmail(chatId);
+        return SendMessage.builder()
+                .chatId(chatId)
+                .text(MessagesUtil.SEND)
+                .build();
     }
 
     public SendMessage getEmailReceiveMessage(Long chatId, String message) {
         String[] splitMessage = message.split("\\s+");
         if (splitMessage.length == 1) {
-            return SendMessage
-                    .builder()
+            return SendMessage.builder()
                     .chatId(chatId)
                     .text(MessagesUtil.GET)
                     .replyMarkup(ButtonsUtil.getGmailMessageReceiveKeyboard())
                     .build();
         }
 
-        Gmail gmail = gmailConnectionService.getGmail(chatId);
+        Gmail gmail = gmailCacheService.getGmail(chatId);
         String query = splitMessage.length > 2
                 ? splitMessage[1].concat(splitMessage[2])
                 : splitMessage[1];
 
         gmailService
                 .getMessagesByQuery(gmail, query, chatId)
-                .forEach(receivedEmail -> eventPublisher
-                        .publishEvent(
-                                SendMessage.builder().chatId(chatId).text(receivedEmail).build()
-                        )
-                );
+                .forEach(receivedEmail -> eventPublisher.publishEvent(
+                        SendMessage.builder()
+                                .chatId(chatId)
+                                .text(receivedEmail)
+                                .build()
+                ));
 
-        return SendMessage
-                .builder()
+        return SendMessage.builder()
                 .chatId(chatId)
                 .text(MessagesUtil.GET_FINISH)
                 .replyMarkup(ButtonsUtil.getGmailMessageReceiveKeyboard())

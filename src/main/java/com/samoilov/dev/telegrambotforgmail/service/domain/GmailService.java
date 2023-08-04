@@ -5,6 +5,7 @@ import com.google.api.services.gmail.model.ListMessagesResponse;
 import com.samoilov.dev.telegrambotforgmail.component.InformationMapper;
 import com.samoilov.dev.telegrambotforgmail.exception.GmailException;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.stereotype.Service;
 import org.telegram.telegrambots.meta.api.methods.send.SendMessage;
@@ -13,24 +14,30 @@ import java.io.IOException;
 import java.util.List;
 import java.util.Objects;
 
+@Slf4j
 @Service
 @RequiredArgsConstructor
 public class GmailService {
 
-    private final GmailStorageService gmailStorageService;
+    private final InformationMapper informationMapper;
 
     private final ApplicationEventPublisher eventPublisher;
 
-    private final InformationMapper informationMapper;
-
     public List<String> getMessagesByQuery(Gmail userGmail, String query, Long chatId) {
         try {
-            ListMessagesResponse messagesList = userGmail
-                    .users()
+            ListMessagesResponse messagesList = userGmail.users()
                     .messages()
                     .list("me")
                     .setQ(query)
                     .execute();
+
+            messagesList.getMessages().forEach(message -> {
+                try {
+                    log.warn(message.toPrettyString());
+                } catch (IOException e) {
+                    throw new RuntimeException(e);
+                }
+            });
 
             return messagesList
                     .getMessages()
@@ -43,8 +50,7 @@ public class GmailService {
                     .toList();
         } catch (IOException e) {
             eventPublisher.publishEvent(
-                    SendMessage
-                            .builder()
+                    SendMessage.builder()
                             .chatId(chatId)
                             .text("Error while getting messages, please try again later")
                             .build()
