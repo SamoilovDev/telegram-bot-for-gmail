@@ -1,8 +1,5 @@
 package com.samoilov.dev.telegrambotforgmail.component;
 
-import com.google.api.services.gmail.model.MessagePart;
-import com.google.api.services.gmail.model.MessagePartBody;
-import com.samoilov.dev.telegrambotforgmail.dto.EmailMessageDto;
 import com.samoilov.dev.telegrambotforgmail.dto.UpdateInformationDto;
 import com.samoilov.dev.telegrambotforgmail.dto.UserDto;
 import com.samoilov.dev.telegrambotforgmail.entity.UserEntity;
@@ -12,8 +9,6 @@ import org.telegram.telegrambots.meta.api.objects.CallbackQuery;
 import org.telegram.telegrambots.meta.api.objects.Update;
 import org.telegram.telegrambots.meta.api.objects.User;
 
-import java.io.IOException;
-import java.util.List;
 import java.util.Objects;
 
 import static org.apache.logging.log4j.util.Strings.EMPTY;
@@ -23,8 +18,7 @@ import static org.apache.logging.log4j.util.Strings.EMPTY;
 public class InformationMapper {
 
     public UserEntity mapTelegramUserToEntity(User user) {
-        return UserEntity
-                .builder()
+        return UserEntity.builder()
                 .telegramId(user.getId())
                 .firstName(user.getFirstName())
                 .lastName(Objects.isNull(user.getLastName()) ? EMPTY : user.getLastName())
@@ -33,8 +27,7 @@ public class InformationMapper {
     }
 
     public UserDto mapEntityToDto(UserEntity userEntity) {
-        return UserDto
-                .builder()
+        return UserDto.builder()
                 .telegramId(userEntity.getTelegramId())
                 .firstName(userEntity.getFirstName())
                 .lastName(userEntity.getLastName())
@@ -45,35 +38,19 @@ public class InformationMapper {
 
     public UpdateInformationDto mapFullUpdateToInformationDto(Update update) {
         if (update.hasMessage()) {
-            return UpdateInformationDto
-                    .builder()
+            return UpdateInformationDto.builder()
                     .chatId(update.getMessage().getChatId())
                     .message(update.getMessage().getText())
                     .user(update.getMessage().getFrom())
                     .build();
         } else {
             CallbackQuery callbackQuery = update.getCallbackQuery();
-            return UpdateInformationDto
-                    .builder()
+            return UpdateInformationDto.builder()
                     .chatId(callbackQuery.getMessage().getChatId())
                     .message(callbackQuery.getData())
                     .user(callbackQuery.getFrom())
                     .build();
         }
-    }
-
-    public EmailMessageDto mapGmailPayloadToEmailMessageDto(MessagePart payload) {
-        try {
-            log.info(payload.toPrettyString());
-        } catch (IOException e) {
-            throw new RuntimeException(e);
-        }
-
-        return EmailMessageDto
-                .builder()
-                .headers(Objects.nonNull(payload.getHeaders()) ? payload.getHeaders() : List.of())
-                .message(Objects.nonNull(payload.getBody()) ?  payload.getBody() : new MessagePartBody())
-                .build();
     }
 
 }
