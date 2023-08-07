@@ -1,5 +1,6 @@
 package com.samoilov.dev.telegrambotforgmail.service.util;
 
+import com.samoilov.dev.telegrambotforgmail.enums.KeyboardType;
 import lombok.experimental.UtilityClass;
 import org.telegram.telegrambots.meta.api.objects.replykeyboard.InlineKeyboardMarkup;
 import org.telegram.telegrambots.meta.api.objects.replykeyboard.buttons.InlineKeyboardButton;
@@ -25,6 +26,11 @@ public class ButtonsUtil {
             InlineKeyboardButton.builder().text("Send new email").callbackData(SEND.getCommand()).build()
     );
 
+    private static final List<InlineKeyboardButton> SETTINGS_BUTTONS = List.of(
+            InlineKeyboardButton.builder().text("Get my statistics").callbackData("/settings stats").build(),
+            InlineKeyboardButton.builder().text("Delete my data and disable account").callbackData("/settings delete").build()
+    );
+
     private static final List<InlineKeyboardButton> GMAIL_GET_MESSAGE_BUTTONS = List.of(
             InlineKeyboardButton.builder().text("All").callbackData(GET.getCommand().concat(ANYWHERE)).build(),
             InlineKeyboardButton.builder().text("Important").callbackData(GET.getCommand().concat(IMPORTANT)).build(),
@@ -48,28 +54,33 @@ public class ButtonsUtil {
     }
 
     public static InlineKeyboardMarkup getAuthorizeInlineKeyboard(String authorizeUri) {
-        InlineKeyboardButton preparedAuthButton = InlineKeyboardButton
-                .builder()
+        InlineKeyboardButton preparedAuthButton = InlineKeyboardButton.builder()
                 .text("Authorize me")
                 .callbackData(AUTHORIZE.getCommand())
                 .url(authorizeUri)
                 .build();
 
-        return InlineKeyboardMarkup
-                .builder()
+        return InlineKeyboardMarkup.builder()
                 .keyboardRow(List.of(preparedAuthButton))
                 .build();
     }
 
-    public static InlineKeyboardMarkup getGmailMainKeyboard() {
-        int gmailMainButtonsSize = GMAIL_MAIN_BUTTONS.size();
-        return InlineKeyboardMarkup
-                .builder()
+    public static InlineKeyboardMarkup getInlineKeyboard(KeyboardType keyboardType) {
+        List<InlineKeyboardButton> keyboardButtons = switch (keyboardType) {
+            case GMAIL_MAIN -> GMAIL_MAIN_BUTTONS;
+            case GMAIL_GET -> GMAIL_GET_MESSAGE_BUTTONS;
+            case SETTINGS -> SETTINGS_BUTTONS;
+        };
+        int keyboardSize = keyboardButtons.size();
+
+        return InlineKeyboardMarkup.builder()
                 .keyboard(
-                        List.of(
-                                GMAIL_MAIN_BUTTONS.subList(0, gmailMainButtonsSize / 2),
-                                GMAIL_MAIN_BUTTONS.subList(gmailMainButtonsSize / 2, gmailMainButtonsSize)
-                        )
+                        keyboardSize > 1
+                                ? List.of(
+                                        keyboardButtons.subList(0, keyboardSize / 2),
+                                        keyboardButtons.subList(keyboardSize / 2, keyboardSize)
+                                )
+                                : List.of(keyboardButtons)
                 )
                 .build();
     }

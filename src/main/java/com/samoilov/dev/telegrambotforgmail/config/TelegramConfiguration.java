@@ -15,7 +15,7 @@ public class TelegramConfiguration {
 
     private final GmailBotController gmailBotController;
 
-    @EventListener({ContextRefreshedEvent.class})
+    @EventListener(ContextRefreshedEvent.class)
     public TelegramBotsApi telegramBotsApi() throws TelegramApiException {
         TelegramBotsApi api = new TelegramBotsApi(DefaultBotSession.class);
         api.registerBot(gmailBotController);

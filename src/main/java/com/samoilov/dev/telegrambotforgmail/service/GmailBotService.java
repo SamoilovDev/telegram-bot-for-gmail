@@ -4,6 +4,7 @@ import com.google.api.services.gmail.Gmail;
 import com.samoilov.dev.telegrambotforgmail.dto.UpdateInformationDto;
 import com.samoilov.dev.telegrambotforgmail.dto.UserDto;
 import com.samoilov.dev.telegrambotforgmail.enums.CommandType;
+import com.samoilov.dev.telegrambotforgmail.enums.KeyboardType;
 import com.samoilov.dev.telegrambotforgmail.service.domain.GmailCacheService;
 import com.samoilov.dev.telegrambotforgmail.service.domain.GmailConnectionService;
 import com.samoilov.dev.telegrambotforgmail.service.domain.GmailService;
@@ -42,6 +43,7 @@ public class GmailBotService {
         return switch (currentCommand) {
             case START -> this.getStartMessage(chatId, savedUser.getFirstName());
             case AUTHORIZE -> this.getAuthorizeMessage(chatId, gmailConnectionService.getAuthorizationUrl(chatId));
+            case SETTINGS -> this.getSettingsMessage(chatId, savedUser, message);
             case GMAIL -> this.getGmailMessage(chatId);
             case SEND -> this.getSendEmailMessage(chatId);
             case GET -> this.getEmailReceiveMessage(chatId, message);
@@ -53,6 +55,33 @@ public class GmailBotService {
         return SendMessage.builder()
                 .chatId(chatId)
                 .text(MessagesUtil.START.formatted(firstName))
+                .build();
+    }
+
+    public SendMessage getSettingsMessage(Long chatId, UserDto userDto, String message) {
+        String[] splitMessage = message.split("\\s+");
+
+        if (splitMessage.length == 1) {
+            return SendMessage.builder()
+                    .chatId(chatId)
+                    .text(MessagesUtil.SETTINGS)
+                    .replyMarkup(ButtonsUtil.getInlineKeyboard(KeyboardType.SETTINGS))
+                    .build();
+        }
+
+        String command = splitMessage[1];
+        String preparedMessage = switch (command) {
+            case "stats" -> MessagesUtil.SETTINGS_STATS.formatted(userDto.getFirstName(), 0, "ENABLED");
+            case "delete" -> {
+                userService.disableUser(userDto.getTelegramId());
+                yield MessagesUtil.SETTINGS_DELETE.formatted(userDto.getFirstName());
+            }
+            default -> throw new IllegalStateException("Unexpected value: " + command);
+        };
+
+        return SendMessage.builder()
+                .chatId(chatId)
+                .text(preparedMessage)
                 .build();
     }
 
@@ -81,7 +110,7 @@ public class GmailBotService {
         return SendMessage.builder()
                 .chatId(chatId)
                 .text(MessagesUtil.GMAIL)
-                .replyMarkup(ButtonsUtil.getGmailMainKeyboard())
+                .replyMarkup(ButtonsUtil.getInlineKeyboard(KeyboardType.GMAIL_MAIN))
                 .build();
     }
 
@@ -108,8 +137,7 @@ public class GmailBotService {
                 ? splitMessage[1].concat(splitMessage[2])
                 : splitMessage[1];
 
-        gmailService
-                .getMessagesByQuery(gmail, query, chatId)
+        gmailService.getMessagesByQuery(gmail, query, chatId)
                 .forEach(receivedEmail -> eventPublisher.publishEvent(
                         SendMessage.builder()
                                 .chatId(chatId)

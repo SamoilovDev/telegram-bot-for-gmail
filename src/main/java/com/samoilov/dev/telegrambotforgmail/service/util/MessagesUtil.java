@@ -29,6 +29,21 @@ public class MessagesUtil {
             Sorry, internal error during authorization, please try to authorize me again or try again later.
             """;
 
+    public static final String SETTINGS = """
+            To change settings choose and click on the button below message.
+            """;
+
+    public static final String SETTINGS_STATS = """
+            %s
+            Count of commands: %s
+            Active type of your account: %s
+            """;
+
+    public static final String SETTINGS_DELETE = """
+            Your account's data was successful deleted! :(
+            Goodbye, %s
+            """;
+
     public static final String GMAIL = """
             To get messages from your Gmail account click on the button below message.
             """;

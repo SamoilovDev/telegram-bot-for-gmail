@@ -20,19 +20,27 @@ public class GmailService {
 
     private final ApplicationEventPublisher eventPublisher;
 
+    private static final String GMAIL_USER_ID = "me";
+
+    private static final String FORMAT = "full";
+
     public List<String> getMessagesByQuery(Gmail userGmail, String query, Long chatId) {
+        return this.getMessageListByQ(userGmail, query, chatId)
+                .stream()
+                .map(message -> this.getFullMessage(userGmail, message.getId()))
+                .filter(message -> Objects.nonNull(message) && Objects.nonNull(message.getPayload()))
+                .map(message -> emailProcessingService.prepareMessagePart(message.getPayload()))
+                .toList();
+    }
+
+    private List<Message> getMessageListByQ(Gmail userGmail, String query, Long chatId) {
         try {
             return userGmail.users()
                     .messages()
-                    .list("me")
+                    .list(GMAIL_USER_ID)
                     .setQ(query)
                     .execute()
-                    .getMessages()
-                    .stream()
-                    .map(message -> this.getFullMessage(userGmail, message.getId()))
-                    .filter(message -> Objects.nonNull(message) && Objects.nonNull(message.getPayload()))
-                    .map(message -> emailProcessingService.prepareMessagePart(message.getPayload()))
-                    .toList();
+                    .getMessages();
         } catch (IOException e) {
             eventPublisher.publishEvent(
                     SendMessage.builder()
@@ -48,8 +56,8 @@ public class GmailService {
         try {
             return userGmail.users()
                     .messages()
-                    .get("me", messageId)
-                    .setFormat("full")
+                    .get(GMAIL_USER_ID, messageId)
+                    .setFormat(FORMAT)
                     .execute();
         } catch (IOException e) {
             throw new GmailException(e);
