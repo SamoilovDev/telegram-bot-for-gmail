@@ -13,6 +13,7 @@ import com.google.api.services.gmail.Gmail;
 import com.samoilov.dev.telegrambotforgmail.config.properties.GoogleProperties;
 import com.samoilov.dev.telegrambotforgmail.exception.AuthorizationUrlCreatingException;
 import com.samoilov.dev.telegrambotforgmail.exception.GmailException;
+import com.samoilov.dev.telegrambotforgmail.service.util.ButtonsUtil;
 import com.samoilov.dev.telegrambotforgmail.service.util.MessagesUtil;
 import lombok.RequiredArgsConstructor;
 import org.springframework.context.ApplicationEventPublisher;
@@ -38,6 +39,8 @@ public class GmailConnectionService {
     private final JsonFactory jsonFactory;
 
     private final List<String> scopes;
+
+    private static final String OAUTH_2_GOOGLEAPIS_COM_TOKEN = "https://oauth2.googleapis.com/token";
 
     public String getAuthorizationUrl(Long chatId) {
         try {
@@ -67,7 +70,7 @@ public class GmailConnectionService {
             GoogleTokenResponse response = new GoogleAuthorizationCodeTokenRequest(
                     netHttpTransport,
                     jsonFactory,
-                    "https://oauth2.googleapis.com/token",
+                    OAUTH_2_GOOGLEAPIS_COM_TOKEN,
                     details.getClientId(),
                     details.getClientSecret(),
                     authCode,
@@ -98,6 +101,11 @@ public class GmailConnectionService {
                 SendMessage.builder()
                         .chatId(chatId)
                         .text(MessagesUtil.AUTHORIZATION_FAILED)
+                        .replyMarkup(
+                                ButtonsUtil.getAuthorizeInlineKeyboard(
+                                        this.getAuthorizationUrl(chatId)
+                                )
+                        )
                         .build()
         );
     }
