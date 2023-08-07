@@ -11,11 +11,9 @@ public enum CommandType {
 
     AUTHORIZE("/authorize"),
 
-    COMMANDS("/commands"),
+    GMAIL("/gmail"),
 
     INFO("/info"),
-
-    GMAIL("/gmail"),
 
     SEND("/send"),
 

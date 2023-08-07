@@ -45,7 +45,7 @@ public class GmailBotService {
             case GMAIL -> this.getGmailMessage(chatId);
             case SEND -> this.getSendEmailMessage(chatId);
             case GET -> this.getEmailReceiveMessage(chatId, message);
-            case INFO, COMMANDS, ERROR -> this.getSimpleResponseMessage(chatId, currentCommand);
+            case INFO, ERROR -> this.getSimpleResponseMessage(chatId, currentCommand);
         };
     }
 
@@ -53,7 +53,6 @@ public class GmailBotService {
         return SendMessage.builder()
                 .chatId(chatId)
                 .text(MessagesUtil.START.formatted(firstName))
-                .replyMarkup(ButtonsUtil.getReplyKeyboard(false))
                 .build();
     }
 
@@ -68,7 +67,6 @@ public class GmailBotService {
     public SendMessage getSimpleResponseMessage(Long chatId, CommandType commandType) {
         String message = switch (commandType) {
             case INFO -> MessagesUtil.INFO;
-            case COMMANDS -> MessagesUtil.COMMANDS;
             case ERROR -> MessagesUtil.ERROR;
             default -> throw new IllegalStateException("Unexpected value: " + commandType);
         };

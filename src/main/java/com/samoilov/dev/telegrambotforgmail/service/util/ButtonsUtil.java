@@ -2,19 +2,13 @@ package com.samoilov.dev.telegrambotforgmail.service.util;
 
 import lombok.experimental.UtilityClass;
 import org.telegram.telegrambots.meta.api.objects.replykeyboard.InlineKeyboardMarkup;
-import org.telegram.telegrambots.meta.api.objects.replykeyboard.ReplyKeyboardMarkup;
 import org.telegram.telegrambots.meta.api.objects.replykeyboard.buttons.InlineKeyboardButton;
-import org.telegram.telegrambots.meta.api.objects.replykeyboard.buttons.KeyboardButton;
-import org.telegram.telegrambots.meta.api.objects.replykeyboard.buttons.KeyboardRow;
 
 import java.util.ArrayList;
 import java.util.List;
 
 import static com.samoilov.dev.telegrambotforgmail.enums.CommandType.AUTHORIZE;
-import static com.samoilov.dev.telegrambotforgmail.enums.CommandType.COMMANDS;
 import static com.samoilov.dev.telegrambotforgmail.enums.CommandType.GET;
-import static com.samoilov.dev.telegrambotforgmail.enums.CommandType.GMAIL;
-import static com.samoilov.dev.telegrambotforgmail.enums.CommandType.INFO;
 import static com.samoilov.dev.telegrambotforgmail.enums.CommandType.SEND;
 import static com.samoilov.dev.telegrambotforgmail.service.util.QueriesUtil.ANYWHERE;
 import static com.samoilov.dev.telegrambotforgmail.service.util.QueriesUtil.ATTACHMENT;
@@ -25,11 +19,6 @@ import static com.samoilov.dev.telegrambotforgmail.service.util.QueriesUtil.UNRE
 
 @UtilityClass
 public class ButtonsUtil {
-
-    private static final List<KeyboardButton> COMMAND_KEYBOARD_BUTTONS = List.of(
-            KeyboardButton.builder().text(COMMANDS.getCommand()).build(),
-            KeyboardButton.builder().text(INFO.getCommand()).build()
-    );
 
     private static final List<InlineKeyboardButton> GMAIL_MAIN_BUTTONS = List.of(
             InlineKeyboardButton.builder().text("Get emails by category").callbackData(GET.getCommand()).build(),
@@ -45,6 +34,19 @@ public class ButtonsUtil {
             InlineKeyboardButton.builder().text("Read").callbackData(GET.getCommand().concat(READ)).build()
     );
 
+    public static InlineKeyboardMarkup getGmailStartKeyboard() {
+        return InlineKeyboardMarkup.builder()
+                .keyboardRow(
+                        List.of(
+                                InlineKeyboardButton.builder()
+                                        .text("Click to start working with Gmail")
+                                        .callbackData("/gmail")
+                                        .build()
+                        )
+                )
+                .build();
+    }
+
     public static InlineKeyboardMarkup getAuthorizeInlineKeyboard(String authorizeUri) {
         InlineKeyboardButton preparedAuthButton = InlineKeyboardButton
                 .builder()
@@ -57,19 +59,6 @@ public class ButtonsUtil {
                 .builder()
                 .keyboardRow(List.of(preparedAuthButton))
                 .build();
-    }
-
-    public static ReplyKeyboardMarkup getReplyKeyboard(boolean isAuthorized) {
-        KeyboardRow firstKeyboardRow = new KeyboardRow(
-                List.of(
-                        isAuthorized
-                                ? KeyboardButton.builder().text(GMAIL.getCommand()).build()
-                                : KeyboardButton.builder().text(AUTHORIZE.getCommand()).build()
-                )
-        );
-        KeyboardRow secondKeyboardRow = new KeyboardRow(COMMAND_KEYBOARD_BUTTONS);
-
-        return new ReplyKeyboardMarkup(List.of(firstKeyboardRow, secondKeyboardRow));
     }
 
     public static InlineKeyboardMarkup getGmailMainKeyboard() {
@@ -98,8 +87,7 @@ public class ButtonsUtil {
             }
         }
 
-        return InlineKeyboardMarkup
-                .builder()
+        return InlineKeyboardMarkup.builder()
                 .keyboard(keyboard)
                 .build();
     }

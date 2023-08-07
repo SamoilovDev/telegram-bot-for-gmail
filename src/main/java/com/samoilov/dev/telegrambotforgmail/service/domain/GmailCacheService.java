@@ -36,7 +36,7 @@ public class GmailCacheService {
                 SendMessage.builder()
                         .chatId(authenticationInfoDto.getChatId())
                         .text(MessagesUtil.SUCCESS_AUTHORIZATION)
-                        .replyMarkup(ButtonsUtil.getReplyKeyboard(true))
+                        .replyMarkup(ButtonsUtil.getGmailStartKeyboard())
                         .build()
         );
     }

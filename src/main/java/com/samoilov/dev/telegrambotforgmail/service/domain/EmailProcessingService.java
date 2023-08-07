@@ -19,11 +19,11 @@ import static org.apache.logging.log4j.util.Strings.EMPTY;
 public class EmailProcessingService {
 
     private static final List<String> REQUIRED_HEADER_NAMES = List.of(
-            "Replay-To",
-            "Subject",
-            "Date",
+            "To",
             "From",
-            "To"
+            "Date",
+            "Subject",
+            "Replay-To"
     );
 
     public String prepareMessagePart(MessagePart messagePart) {
@@ -72,12 +72,14 @@ public class EmailProcessingService {
         String decodedMessage = new String(
                         Base64.getUrlDecoder().decode(body.getBytes(UTF_8)), UTF_8
                 );
-        String abbreviatedMessage = decodedMessage.replaceAll("<.*?>", "")
+        String abbreviatedMessage = decodedMessage.replaceAll("<[\\w@.#=-]+>", "")
                 .replaceAll("(&nbsp;)+", "\n")
                 .replaceAll("\\[email_opened_tracking_pixel\\?.*]", " ")
                 .replaceAll("\\{.*?}", " ")
                 .replaceAll("\\n+", "\n")
-                .replaceAll("\\s{3,}", "\n");
+                .replaceAll("\\s{3,}", "\n")
+                .replaceAll("\\*\\[class=[\\w-]+]",  EMPTY)
+                .replaceAll("@[\\w-]+", EMPTY);
 
         preparedHeaders.append("\nMessage: ").append(abbreviatedMessage);
 

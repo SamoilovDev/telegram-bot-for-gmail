@@ -13,7 +13,7 @@ import com.google.api.services.gmail.Gmail;
 import com.samoilov.dev.telegrambotforgmail.config.properties.GoogleProperties;
 import com.samoilov.dev.telegrambotforgmail.exception.AuthorizationUrlCreatingException;
 import com.samoilov.dev.telegrambotforgmail.exception.GmailException;
-import com.samoilov.dev.telegrambotforgmail.service.util.ButtonsUtil;
+import com.samoilov.dev.telegrambotforgmail.service.util.MessagesUtil;
 import lombok.RequiredArgsConstructor;
 import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.stereotype.Service;
@@ -96,9 +96,8 @@ public class GmailConnectionService {
     protected void sendErrorResponse(Long chatId) {
         eventPublisher.publishEvent(
                 SendMessage.builder()
-                        .text("Sorry, internal error during authorization, please try to authorize me again or try again later.")
                         .chatId(chatId)
-                        .replyMarkup(ButtonsUtil.getReplyKeyboard(false))
+                        .text(MessagesUtil.AUTHORIZATION_FAILED)
                         .build()
         );
     }
