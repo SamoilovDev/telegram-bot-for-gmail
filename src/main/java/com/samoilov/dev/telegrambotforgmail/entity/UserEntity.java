@@ -2,15 +2,17 @@ package com.samoilov.dev.telegrambotforgmail.entity;
 
 import com.samoilov.dev.telegrambotforgmail.entity.id.TelegramId;
 import com.samoilov.dev.telegrambotforgmail.enums.ActiveType;
+import jakarta.persistence.CascadeType;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.EnumType;
 import jakarta.persistence.Enumerated;
+import jakarta.persistence.FetchType;
 import jakarta.persistence.Id;
 import jakarta.persistence.IdClass;
+import jakarta.persistence.OneToMany;
 import jakarta.persistence.Table;
 import jakarta.persistence.UniqueConstraint;
-import jakarta.validation.constraints.Email;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Getter;
@@ -22,6 +24,8 @@ import org.hibernate.annotations.SQLDelete;
 import org.hibernate.annotations.UpdateTimestamp;
 
 import java.time.LocalDateTime;
+import java.util.ArrayList;
+import java.util.List;
 
 @Getter
 @Setter
@@ -30,9 +34,12 @@ import java.time.LocalDateTime;
 @AllArgsConstructor
 @Builder(toBuilder = true)
 @IdClass(TelegramId.class)
-@SQLDelete(sql = "UPDATE user_table SET active_type = 'DISABLED' WHERE telegram_id = ?", check = ResultCheckStyle.COUNT)
+@SQLDelete(
+        sql = "UPDATE user_table SET active_type = 'DISABLED' WHERE telegram_id = ?",
+        check = ResultCheckStyle.COUNT
+)
 @Table(name = "user_table", uniqueConstraints = {
-        @UniqueConstraint(columnNames = "gmail_address", name = "user_table_unique_gmail_address_idx")
+        @UniqueConstraint(columnNames = "user_name", name = "user_table_unique_user_name_idx")
 })
 public class UserEntity {
 
@@ -50,10 +57,6 @@ public class UserEntity {
     @Column(name = "user_name", length = 50)
     private String userName;
 
-    @Email(regexp = "^[\\w\\d+_.-]+@gmail.com$")
-    @Column(name = "gmail_address", length = 50)
-    private String email;
-
     @CreationTimestamp
     @Column(name = "registered_at")
     private LocalDateTime createdAt;
@@ -70,5 +73,9 @@ public class UserEntity {
     @Builder.Default
     @Column(name = "command_counter")
     private Long commandCounter = 0L;
+
+    @Builder.Default
+    @OneToMany(mappedBy = "user", cascade = CascadeType.ALL, fetch = FetchType.EAGER)
+    private List<EmailEntity> emails = new ArrayList<>();
 
 }

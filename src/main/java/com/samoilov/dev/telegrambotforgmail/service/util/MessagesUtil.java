@@ -22,7 +22,7 @@ public class MessagesUtil {
              """;
 
     public static final String SUCCESS_AUTHORIZATION = """
-            You have successfully authorized me. Now you can send emails from your Gmail account.
+            You have successfully authorized me. Now you can get and send emails from your Gmail account.
             """;
 
     public static final String AUTHORIZATION_FAILED = """

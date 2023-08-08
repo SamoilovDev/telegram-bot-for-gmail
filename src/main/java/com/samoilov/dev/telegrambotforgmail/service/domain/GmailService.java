@@ -33,6 +33,17 @@ public class GmailService {
                 .toList();
     }
 
+    public String getEmailAddress(Gmail gmail) {
+        try {
+            return gmail.users()
+                    .getProfile(GMAIL_USER_ID)
+                    .execute()
+                    .getEmailAddress();
+        } catch (IOException e) {
+            throw new GmailException(e);
+        }
+    }
+
     private List<Message> getMessageListByQ(Gmail userGmail, String query, Long chatId) {
         try {
             return userGmail.users()

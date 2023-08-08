@@ -2,6 +2,7 @@ package com.samoilov.dev.telegrambotforgmail.component;
 
 import com.samoilov.dev.telegrambotforgmail.dto.UpdateInformationDto;
 import com.samoilov.dev.telegrambotforgmail.dto.UserDto;
+import com.samoilov.dev.telegrambotforgmail.entity.EmailEntity;
 import com.samoilov.dev.telegrambotforgmail.entity.UserEntity;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Component;
@@ -9,6 +10,7 @@ import org.telegram.telegrambots.meta.api.objects.CallbackQuery;
 import org.telegram.telegrambots.meta.api.objects.Update;
 import org.telegram.telegrambots.meta.api.objects.User;
 
+import java.time.LocalDateTime;
 import java.util.Objects;
 
 import static org.apache.logging.log4j.util.Strings.EMPTY;
@@ -23,6 +25,7 @@ public class InformationMapper {
                 .firstName(user.getFirstName())
                 .lastName(Objects.isNull(user.getLastName()) ? EMPTY : user.getLastName())
                 .userName(Objects.isNull(user.getUserName()) ? EMPTY : user.getUserName())
+                .updatedAt(LocalDateTime.now())
                 .build();
     }
 
@@ -32,7 +35,12 @@ public class InformationMapper {
                 .firstName(userEntity.getFirstName())
                 .lastName(userEntity.getLastName())
                 .userName(userEntity.getUserName())
-                .email(userEntity.getEmail())
+                .emails(
+                        userEntity.getEmails()
+                                .stream()
+                                .map(this::mapEmailEntityToString)
+                                .toList()
+                )
                 .build();
     }
 
@@ -51,6 +59,10 @@ public class InformationMapper {
                     .user(callbackQuery.getFrom())
                     .build();
         }
+    }
+
+    private String mapEmailEntityToString(EmailEntity emailEntity) {
+        return emailEntity.getEmail();
     }
 
 }
