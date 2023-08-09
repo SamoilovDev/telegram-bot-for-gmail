@@ -13,14 +13,20 @@ import com.samoilov.dev.telegrambotforgmail.service.util.ButtonsUtil;
 import com.samoilov.dev.telegrambotforgmail.service.util.MessagesUtil;
 import jakarta.validation.constraints.NotNull;
 import lombok.RequiredArgsConstructor;
-import lombok.extern.slf4j.Slf4j;
 import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.stereotype.Service;
 import org.telegram.telegrambots.meta.api.methods.ParseMode;
 import org.telegram.telegrambots.meta.api.methods.send.SendMessage;
 import org.telegram.telegrambots.meta.api.objects.replykeyboard.ReplyKeyboard;
 
-@Slf4j
+import static com.samoilov.dev.telegrambotforgmail.service.util.MessagesUtil.AUTHORIZE;
+import static com.samoilov.dev.telegrambotforgmail.service.util.MessagesUtil.GET_FINISH;
+import static com.samoilov.dev.telegrambotforgmail.service.util.MessagesUtil.GMAIL;
+import static com.samoilov.dev.telegrambotforgmail.service.util.MessagesUtil.SEND_FINISH;
+import static com.samoilov.dev.telegrambotforgmail.service.util.MessagesUtil.SETTINGS;
+import static com.samoilov.dev.telegrambotforgmail.service.util.MessagesUtil.SETTINGS_DELETE;
+import static com.samoilov.dev.telegrambotforgmail.service.util.MessagesUtil.SETTINGS_STATS;
+
 @Service
 @RequiredArgsConstructor
 public class GmailBotService {
@@ -43,48 +49,58 @@ public class GmailBotService {
         userService.incrementCommandCounter(savedUser.getTelegramId());
 
         return switch (currentCommand) {
-            case START, INFO, ERROR -> {
-                String responseMessage = switch (currentCommand) {
-                    case START -> MessagesUtil.START.formatted(savedUser.getFirstName());
-                    case INFO -> MessagesUtil.INFO;
-                    case ERROR -> MessagesUtil.ERROR;
-                    default -> throw new IllegalStateException("Unexpected value: " + currentCommand);
-                };
-
-                yield this.createSendMessage(preparedUpdate.getChatId(), responseMessage, null);
-            }
-            case AUTHORIZE, GMAIL -> {
-                String responseMessage = currentCommand.equals(CommandType.AUTHORIZE)
-                        ? MessagesUtil.AUTHORIZE
-                        : MessagesUtil.GMAIL;
-                ReplyKeyboard keyboard = currentCommand.equals(CommandType.AUTHORIZE)
-                        ? ButtonsUtil.getAuthorizeInlineKeyboard(
-                                gmailConnectionService.getAuthorizationUrl(preparedUpdate.getChatId())
-                        )
-                        : ButtonsUtil.getInlineKeyboard(KeyboardType.GMAIL_MAIN);
-
-                yield this.createSendMessage(preparedUpdate.getChatId(), responseMessage, keyboard);
-            }
-            case SETTINGS -> this.getSettingsMessage(preparedUpdate.getChatId(), savedUser, message);
-            case SEND -> this.getSendEmailMessage(preparedUpdate.getChatId(), savedUser.getTelegramId(), message);
-            case GET -> this.getEmailReceiveMessage(preparedUpdate.getChatId(), savedUser.getTelegramId(), message);
+            case START, INFO, ERROR -> this.getSimpleMessage(
+                    currentCommand, savedUser.getFirstName(), preparedUpdate.getChatId()
+            );
+            case AUTHORIZE, GMAIL -> this.getMessageWithButtons(
+                    currentCommand, preparedUpdate.getChatId()
+            );
+            case SEND, GET -> this.getGmailProcessingMessage(
+                    preparedUpdate.getChatId(), savedUser.getTelegramId(), message
+            );
+            case SETTINGS -> this.getSettingsMessage(
+                    preparedUpdate.getChatId(), savedUser, message
+            );
+            default -> throw new IllegalStateException("Unexpected value: " + currentCommand);
         };
     }
 
-    public SendMessage getSettingsMessage(Long chatId, UserDto userDto, String message) {
+    private SendMessage getSimpleMessage(CommandType currentCommand, String firstName, Long chatId) {
+        String responseMessage = switch (currentCommand) {
+            case START -> MessagesUtil.START.formatted(firstName);
+            case INFO -> MessagesUtil.INFO;
+            case ERROR -> MessagesUtil.ERROR;
+            default -> throw new IllegalStateException("Unexpected value: " + currentCommand);
+        };
+
+        return this.createSendMessage(chatId, responseMessage, null);
+    }
+
+    private SendMessage getMessageWithButtons(CommandType currentCommand, Long chatId) {
+        String responseMessage = currentCommand.equals(CommandType.AUTHORIZE)
+                ? AUTHORIZE
+                : GMAIL;
+        ReplyKeyboard keyboard = currentCommand.equals(CommandType.AUTHORIZE)
+                ? ButtonsUtil.getAuthorizeInlineKeyboard(gmailConnectionService.getAuthorizationUrl(chatId))
+                : ButtonsUtil.getInlineKeyboard(KeyboardType.GMAIL_MAIN);
+
+        return this.createSendMessage(chatId, responseMessage, keyboard);
+    }
+
+    private SendMessage getSettingsMessage(Long chatId, UserDto userDto, String message) {
         String[] splitMessage = message.split("\\s+");
 
         if (splitMessage.length == 1) {
             return this.createSendMessage(
-                    chatId, MessagesUtil.SETTINGS, ButtonsUtil.getInlineKeyboard(KeyboardType.SETTINGS)
+                    chatId, SETTINGS, ButtonsUtil.getInlineKeyboard(KeyboardType.SETTINGS)
             );
         } else {
             String command = splitMessage[1];
             String preparedMessage = switch (command) {
-                case "stats" -> MessagesUtil.SETTINGS_STATS.formatted(userDto.getFirstName(), 0, "ENABLED");
+                case "stats" -> SETTINGS_STATS.formatted(userDto.getFirstName(), 0, "ENABLED");
                 case "delete" -> {
                     userService.disableUser(userDto.getTelegramId());
-                    yield MessagesUtil.SETTINGS_DELETE.formatted(userDto.getFirstName());
+                    yield SETTINGS_DELETE.formatted(userDto.getFirstName());
                 }
                 default -> throw new IllegalStateException("Unexpected value: " + command);
             };
@@ -93,46 +109,30 @@ public class GmailBotService {
         }
     }
 
-    public SendMessage getSendEmailMessage(Long chatId, Long telegramId, String message) {
+    private SendMessage getGmailProcessingMessage(Long chatId, Long telegramId, String message) {
         String[] splitMessage = message.split("\\s+", 2);
-        if (splitMessage.length == 1) {
-            return this.createSendMessage(chatId, MessagesUtil.SEND, null);
-        } else {
+        boolean isSendProcess = splitMessage[0].equals(CommandType.SEND.getCommand());
+
+        if (splitMessage.length > 1) {
             Gmail gmail = gmailCacheService.getGmail(chatId);
 
-            this.setGmailAddressForUser(telegramId, gmail);
-            gmailService.sendEmail(chatId, splitMessage[1], gmail);
+            userService.addEmailAddress(telegramId, gmailService.getEmailAddress(gmail));
 
-            return this.createSendMessage(chatId, MessagesUtil.SEND_FINISH, null);
+            if (isSendProcess) {
+                gmailService.sendEmail(chatId, splitMessage[1], gmail);
+            } else {
+                gmailService.getMessagesByQuery(gmail, splitMessage[1], chatId)
+                        .forEach(receivedEmail -> eventPublisher.publishEvent(
+                                this.createSendMessage(chatId, receivedEmail, null)
+                        ));
+            }
         }
-    }
 
-    public SendMessage getEmailReceiveMessage(Long chatId, Long telegramId, String message) {
-        String[] splitMessage = message.split("\\s+", 2);
-
-        if (splitMessage.length == 1) {
-            return this.createSendMessage(chatId, MessagesUtil.GET, ButtonsUtil.getGmailMessageReceiveKeyboard());
-        } else {
-            Gmail gmail = gmailCacheService.getGmail(chatId);
-
-            this.setGmailAddressForUser(telegramId, gmail);
-
-            gmailService.getMessagesByQuery(gmail, splitMessage[1], chatId)
-                    .forEach(
-                            receivedEmail -> eventPublisher.publishEvent(
-                                    this.createSendMessage(chatId, receivedEmail, null)
-                            )
-                    );
-
-            return this.createSendMessage(
-                    chatId, MessagesUtil.GET_FINISH, ButtonsUtil.getGmailMessageReceiveKeyboard()
-            );
-        }
-    }
-
-    private void setGmailAddressForUser(Long telegramId, Gmail gmail) {
-        String email = gmailService.getEmailAddress(gmail);
-        userService.addEmailAddress(telegramId, email);
+        return this.createSendMessage(
+                chatId,
+                isSendProcess ? SEND_FINISH : GET_FINISH,
+                isSendProcess ? null : ButtonsUtil.getGmailMessageReceiveKeyboard()
+        );
     }
 
     private SendMessage createSendMessage(@NotNull Long chatId, String message, ReplyKeyboard keyboard) {
