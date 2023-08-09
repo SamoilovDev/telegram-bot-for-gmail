@@ -49,7 +49,11 @@ public class MessagesUtil {
             """;
 
     public static final String SEND = """
-            -
+            /send <email:to> -> <subject> -> <body>
+            """;
+
+    public static final String SEND_FINISH = """
+            You have successfully sent email!
             """;
 
     public static final String GET = """

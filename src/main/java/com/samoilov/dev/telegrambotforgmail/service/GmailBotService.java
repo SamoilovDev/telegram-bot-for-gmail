@@ -11,10 +11,12 @@ import com.samoilov.dev.telegrambotforgmail.service.domain.GmailService;
 import com.samoilov.dev.telegrambotforgmail.service.domain.UserService;
 import com.samoilov.dev.telegrambotforgmail.service.util.ButtonsUtil;
 import com.samoilov.dev.telegrambotforgmail.service.util.MessagesUtil;
+import jakarta.validation.constraints.NotNull;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.stereotype.Service;
+import org.telegram.telegrambots.meta.api.methods.ParseMode;
 import org.telegram.telegrambots.meta.api.methods.send.SendMessage;
 import org.telegram.telegrambots.meta.api.objects.replykeyboard.ReplyKeyboard;
 
@@ -64,7 +66,7 @@ public class GmailBotService {
                 yield this.createSendMessage(preparedUpdate.getChatId(), responseMessage, keyboard);
             }
             case SETTINGS -> this.getSettingsMessage(preparedUpdate.getChatId(), savedUser, message);
-            case SEND -> this.getSendEmailMessage(preparedUpdate.getChatId(), savedUser.getTelegramId());
+            case SEND -> this.getSendEmailMessage(preparedUpdate.getChatId(), savedUser.getTelegramId(), message);
             case GET -> this.getEmailReceiveMessage(preparedUpdate.getChatId(), savedUser.getTelegramId(), message);
         };
     }
@@ -91,34 +93,36 @@ public class GmailBotService {
         }
     }
 
-    public SendMessage getSendEmailMessage(Long chatId, Long telegramId) {
-        Gmail gmail = gmailCacheService.getGmail(chatId);
+    public SendMessage getSendEmailMessage(Long chatId, Long telegramId, String message) {
+        String[] splitMessage = message.split("\\s+", 2);
+        if (splitMessage.length == 1) {
+            return this.createSendMessage(chatId, MessagesUtil.SEND, null);
+        } else {
+            Gmail gmail = gmailCacheService.getGmail(chatId);
 
-        this.setGmailAddressForUser(telegramId, gmail);
+            this.setGmailAddressForUser(telegramId, gmail);
+            gmailService.sendEmail(chatId, splitMessage[1], gmail);
 
-        return this.createSendMessage(chatId, MessagesUtil.SEND, null);
+            return this.createSendMessage(chatId, MessagesUtil.SEND_FINISH, null);
+        }
     }
 
     public SendMessage getEmailReceiveMessage(Long chatId, Long telegramId, String message) {
-        String[] splitMessage = message.split("\\s+");
+        String[] splitMessage = message.split("\\s+", 2);
 
         if (splitMessage.length == 1) {
             return this.createSendMessage(chatId, MessagesUtil.GET, ButtonsUtil.getGmailMessageReceiveKeyboard());
         } else {
             Gmail gmail = gmailCacheService.getGmail(chatId);
-            String query = splitMessage.length > 2
-                    ? splitMessage[1].concat(splitMessage[2])
-                    : splitMessage[1];
 
             this.setGmailAddressForUser(telegramId, gmail);
 
-            gmailService.getMessagesByQuery(gmail, query, chatId)
-                    .forEach(receivedEmail -> eventPublisher.publishEvent(
-                            SendMessage.builder()
-                                    .chatId(chatId)
-                                    .text(receivedEmail)
-                                    .build()
-                    ));
+            gmailService.getMessagesByQuery(gmail, splitMessage[1], chatId)
+                    .forEach(
+                            receivedEmail -> eventPublisher.publishEvent(
+                                    this.createSendMessage(chatId, receivedEmail, null)
+                            )
+                    );
 
             return this.createSendMessage(
                     chatId, MessagesUtil.GET_FINISH, ButtonsUtil.getGmailMessageReceiveKeyboard()
@@ -131,11 +135,12 @@ public class GmailBotService {
         userService.addEmailAddress(telegramId, email);
     }
 
-    private SendMessage createSendMessage(Long chatId, String message, ReplyKeyboard keyboard) {
+    private SendMessage createSendMessage(@NotNull Long chatId, String message, ReplyKeyboard keyboard) {
         return SendMessage.builder()
                 .chatId(chatId)
                 .text(message)
                 .replyMarkup(keyboard)
+                .parseMode(ParseMode.MARKDOWN)
                 .build();
     }
 

@@ -1,5 +1,6 @@
 package com.samoilov.dev.telegrambotforgmail.component;
 
+import com.samoilov.dev.telegrambotforgmail.dto.EmailMessageDto;
 import com.samoilov.dev.telegrambotforgmail.dto.UpdateInformationDto;
 import com.samoilov.dev.telegrambotforgmail.dto.UserDto;
 import com.samoilov.dev.telegrambotforgmail.entity.EmailEntity;
@@ -10,8 +11,14 @@ import org.telegram.telegrambots.meta.api.objects.CallbackQuery;
 import org.telegram.telegrambots.meta.api.objects.Update;
 import org.telegram.telegrambots.meta.api.objects.User;
 
+import javax.mail.Message;
+import javax.mail.MessagingException;
+import javax.mail.Session;
+import javax.mail.internet.InternetAddress;
+import javax.mail.internet.MimeMessage;
 import java.time.LocalDateTime;
 import java.util.Objects;
+import java.util.Properties;
 
 import static org.apache.logging.log4j.util.Strings.EMPTY;
 
@@ -27,6 +34,18 @@ public class InformationMapper {
                 .userName(Objects.isNull(user.getUserName()) ? EMPTY : user.getUserName())
                 .updatedAt(LocalDateTime.now())
                 .build();
+    }
+
+    public MimeMessage mapEmailMessageDtoToMime(EmailMessageDto emailMessageDto) throws MessagingException {
+        Session session = Session.getDefaultInstance(new Properties(), null);
+        MimeMessage mimeMessage = new MimeMessage(session);
+
+        mimeMessage.setFrom(new InternetAddress(emailMessageDto.getFrom()));
+        mimeMessage.addRecipient(Message.RecipientType.TO, new InternetAddress(emailMessageDto.getTo()));
+        mimeMessage.setSubject(emailMessageDto.getSubject());
+        mimeMessage.setText(emailMessageDto.getBodyText());
+
+        return mimeMessage;
     }
 
     public UserDto mapEntityToDto(UserEntity userEntity) {

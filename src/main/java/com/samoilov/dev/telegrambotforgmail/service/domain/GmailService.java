@@ -8,7 +8,11 @@ import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.stereotype.Service;
 import org.telegram.telegrambots.meta.api.methods.send.SendMessage;
 
+import javax.mail.MessagingException;
+import javax.mail.internet.MimeMessage;
+import java.io.ByteArrayOutputStream;
 import java.io.IOException;
+import java.util.Base64;
 import java.util.List;
 import java.util.Objects;
 
@@ -40,6 +44,36 @@ public class GmailService {
                     .execute()
                     .getEmailAddress();
         } catch (IOException e) {
+            throw new GmailException(e);
+        }
+    }
+
+    public void sendEmail(Long chatId, String message, Gmail userGmail) {
+        String fromEmail = this.getEmailAddress(userGmail);
+        MimeMessage mimeMessage = emailProcessingService.prepareRawMessageToMime(message, fromEmail, chatId);
+        this.sendEmailMessage(userGmail, mimeMessage, chatId);
+    }
+
+    private void sendEmailMessage(Gmail userGmail, MimeMessage emailMessage, Long chatId) {
+        try (ByteArrayOutputStream buffer = new ByteArrayOutputStream()) {
+            emailMessage.writeTo(buffer);
+
+            String encodedEmail = Base64.getUrlEncoder().encodeToString(buffer.toByteArray());
+            Message preparedMessage = new Message();
+
+            preparedMessage.setRaw(encodedEmail);
+
+            userGmail.users()
+                    .messages()
+                    .send(GMAIL_USER_ID, preparedMessage)
+                    .execute();
+        } catch (IOException | MessagingException e) {
+            eventPublisher.publishEvent(
+                    SendMessage.builder()
+                            .chatId(chatId)
+                            .text("Error during sending message, please try again later.")
+                            .build()
+            );
             throw new GmailException(e);
         }
     }

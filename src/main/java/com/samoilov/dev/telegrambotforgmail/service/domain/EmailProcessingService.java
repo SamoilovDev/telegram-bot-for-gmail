@@ -3,9 +3,17 @@ package com.samoilov.dev.telegrambotforgmail.service.domain;
 import com.google.api.services.gmail.model.MessagePart;
 import com.google.api.services.gmail.model.MessagePartBody;
 import com.google.api.services.gmail.model.MessagePartHeader;
+import com.samoilov.dev.telegrambotforgmail.component.InformationMapper;
+import com.samoilov.dev.telegrambotforgmail.dto.EmailMessageDto;
+import com.samoilov.dev.telegrambotforgmail.exception.GmailException;
+import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.stereotype.Service;
+import org.telegram.telegrambots.meta.api.methods.send.SendMessage;
 
+import javax.mail.MessagingException;
+import javax.mail.internet.MimeMessage;
 import java.util.Base64;
 import java.util.List;
 import java.util.Objects;
@@ -16,7 +24,12 @@ import static org.apache.logging.log4j.util.Strings.EMPTY;
 
 @Slf4j
 @Service
+@RequiredArgsConstructor
 public class EmailProcessingService {
+
+    private final InformationMapper informationMapper;
+
+    private final ApplicationEventPublisher eventPublisher;
 
     private static final List<String> REQUIRED_HEADER_NAMES = List.of(
             "To",
@@ -42,6 +55,28 @@ public class EmailProcessingService {
 
         return bodyPart.map(body -> this.createFullEmailMessage(preparedMessage, body))
                 .orElse(EMPTY);
+    }
+
+    public MimeMessage prepareRawMessageToMime(String rawMessage, String fromEmail, Long chatId) {
+        try {
+            String[] splitRawMessage = rawMessage.split("\\s*->\\s*", 3);
+            EmailMessageDto emailMessageDto = EmailMessageDto.builder()
+                    .from(fromEmail)
+                    .to(splitRawMessage[0])
+                    .subject(splitRawMessage[1].equals("-") ? null : splitRawMessage[1])
+                    .bodyText(splitRawMessage[2].equals("-") ? null : splitRawMessage[2])
+                    .build();
+
+            return informationMapper.mapEmailMessageDtoToMime(emailMessageDto);
+        } catch (MessagingException e) {
+            eventPublisher.publishEvent(
+                    SendMessage.builder()
+                            .chatId(chatId)
+                            .text("Error during sending message, please try again later.")
+                            .build()
+            );
+            throw new GmailException(e);
+        }
     }
 
     private StringBuilder createPreparedHeadersPart(List<MessagePartHeader> headers) {
@@ -74,12 +109,12 @@ public class EmailProcessingService {
                 );
         String abbreviatedMessage = decodedMessage.replaceAll("<[\\w@.#=-]+>", "")
                 .replaceAll("(&nbsp;)+", "\n")
-                .replaceAll("\\[email_opened_tracking_pixel\\?.*]", " ")
+                .replaceAll("\\[*email_opened_tracking_pixel\\?[\\w&=;?-]+]*", " ")
                 .replaceAll("\\{.*?}", " ")
-                .replaceAll("\\n+", "\n")
-                .replaceAll("\\s{3,}", "\n")
-                .replaceAll("\\*\\[class=[\\w-]+]",  EMPTY)
-                .replaceAll("@[\\w-]+", EMPTY);
+                .replaceAll("\\*\\[class=[\\w-]+]",  " ")
+                .replaceAll("@[\\w-]+", " ")
+                .replaceAll("\\n{3,}", "\n\n")
+                .replaceAll("\\s{3,}", "\n\n");
 
         preparedHeaders.append("\nMessage: ").append(abbreviatedMessage);
 
