@@ -6,16 +6,21 @@ import com.google.api.services.gmail.model.MessagePartHeader;
 import com.samoilov.dev.telegrambotforgmail.component.InformationMapper;
 import com.samoilov.dev.telegrambotforgmail.dto.EmailMessageDto;
 import com.samoilov.dev.telegrambotforgmail.exception.GmailException;
+import com.samoilov.dev.telegrambotforgmail.service.util.ButtonsUtil;
+import com.samoilov.dev.telegrambotforgmail.service.util.MessagesUtil;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.stereotype.Service;
+import org.telegram.telegrambots.meta.api.methods.ParseMode;
 import org.telegram.telegrambots.meta.api.methods.send.SendMessage;
 
 import javax.mail.MessagingException;
 import javax.mail.internet.MimeMessage;
 import java.util.Base64;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
 
@@ -32,11 +37,11 @@ public class EmailProcessingService {
     private final ApplicationEventPublisher eventPublisher;
 
     private static final List<String> REQUIRED_HEADER_NAMES = List.of(
-            "To",
             "From",
+            "To",
+            "Replay-To",
             "Date",
-            "Subject",
-            "Replay-To"
+            "Subject"
     );
 
     public String prepareMessagePart(MessagePart messagePart) {
@@ -53,13 +58,19 @@ public class EmailProcessingService {
                     .findFirst();
         }
 
-        return bodyPart.map(body -> this.createFullEmailMessage(preparedMessage, body))
+        return bodyPart
+                .map(body -> this.createFullEmailMessage(preparedMessage, body))
                 .orElse(EMPTY);
     }
 
     public MimeMessage prepareRawMessageToMime(String rawMessage, String fromEmail, Long chatId) {
         try {
             String[] splitRawMessage = rawMessage.split("\\s*->\\s*", 3);
+
+            if (splitRawMessage.length < 3 || !splitRawMessage[0].matches("[\\w-]+@[\\w-]+\\.\\w+")) {
+                throw new MessagingException();
+            }
+
             EmailMessageDto emailMessageDto = EmailMessageDto.builder()
                     .from(fromEmail)
                     .to(splitRawMessage[0])
@@ -72,7 +83,9 @@ public class EmailProcessingService {
             eventPublisher.publishEvent(
                     SendMessage.builder()
                             .chatId(chatId)
-                            .text("Error during sending message, please try again later.")
+                            .text(MessagesUtil.SEND_ERROR)
+                            .replyMarkup(ButtonsUtil.getGmailSendMessageTemplateKeyboard())
+                            .parseMode(ParseMode.MARKDOWN)
                             .build()
             );
             throw new GmailException(e);
@@ -80,16 +93,28 @@ public class EmailProcessingService {
     }
 
     private StringBuilder createPreparedHeadersPart(List<MessagePartHeader> headers) {
-        StringBuilder preparedMessage = new StringBuilder("Email found:");
+        StringBuilder preparedMessage = new StringBuilder("Email found:\n");
+        Map<String, String> headersMap = new HashMap<>();
 
         headers.stream()
                 .filter(header -> REQUIRED_HEADER_NAMES.contains(header.getName()))
-                .forEach(header -> preparedMessage.append("\n\n")
-                        .append(header.getName())
+                .forEach(header -> {
+                    String headerName = header.getName();
+                    String value = header.getValue();
+                    headersMap.put(
+                            header.getName(),
+                            headerName.equals("Date")
+                                    ? value.substring(0, value.length() - 6)
+                                    : value
+                    );
+                });
+
+        REQUIRED_HEADER_NAMES.stream()
+                .filter(headersMap::containsKey)
+                .forEachOrdered(headerName -> preparedMessage.append("\n")
+                        .append(headerName)
                         .append(": ")
-                        .append(header.getValue())
-                        .append("\n")
-                );
+                        .append(headersMap.get(headerName)));
 
         return preparedMessage;
     }
@@ -104,19 +129,14 @@ public class EmailProcessingService {
     }
 
     private String createFullEmailMessage(StringBuilder preparedHeaders, String body) {
-        String decodedMessage = new String(
-                        Base64.getUrlDecoder().decode(body.getBytes(UTF_8)), UTF_8
-                );
-        String abbreviatedMessage = decodedMessage.replaceAll("<[\\w@.#=-]+>", "")
+        String decodedMessage = new String(Base64.getUrlDecoder().decode(body.getBytes(UTF_8)), UTF_8);
+        String abbreviatedMessage = decodedMessage
+                .replaceAll("https?://\\S+", "[*click*]($0)")
+                .replaceAll("<[^>]+>", "")
                 .replaceAll("(&nbsp;)+", "\n")
-                .replaceAll("\\[*email_opened_tracking_pixel\\?[\\w&=;?-]+]*", " ")
-                .replaceAll("\\{.*?}", " ")
-                .replaceAll("\\*\\[class=[\\w-]+]",  " ")
-                .replaceAll("@[\\w-]+", " ")
-                .replaceAll("\\n{3,}", "\n\n")
-                .replaceAll("\\s{3,}", "\n\n");
+                .replaceAll("[\\n\\s]{3,}", "\n");
 
-        preparedHeaders.append("\nMessage: ").append(abbreviatedMessage);
+        preparedHeaders.append("\n\nMessage:\n").append(abbreviatedMessage);
 
         return preparedHeaders.toString();
     }

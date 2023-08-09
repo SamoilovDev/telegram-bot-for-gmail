@@ -48,9 +48,10 @@ public class GmailService {
         }
     }
 
-    public void sendEmail(Long chatId, String message, Gmail userGmail) {
+    public void sendEmail(Long chatId, String emailSample, Gmail userGmail) {
         String fromEmail = this.getEmailAddress(userGmail);
-        MimeMessage mimeMessage = emailProcessingService.prepareRawMessageToMime(message, fromEmail, chatId);
+        MimeMessage mimeMessage = emailProcessingService.prepareRawMessageToMime(emailSample, fromEmail, chatId);
+
         this.sendEmailMessage(userGmail, mimeMessage, chatId);
     }
 
@@ -90,7 +91,7 @@ public class GmailService {
             eventPublisher.publishEvent(
                     SendMessage.builder()
                             .chatId(chatId)
-                            .text("Error while getting messages, please try again later")
+                            .text("Error during getting messages, please try again later")
                             .build()
             );
             throw new GmailException(e);

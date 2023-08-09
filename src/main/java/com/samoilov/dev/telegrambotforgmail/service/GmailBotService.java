@@ -20,8 +20,10 @@ import org.telegram.telegrambots.meta.api.methods.send.SendMessage;
 import org.telegram.telegrambots.meta.api.objects.replykeyboard.ReplyKeyboard;
 
 import static com.samoilov.dev.telegrambotforgmail.service.util.MessagesUtil.AUTHORIZE;
+import static com.samoilov.dev.telegrambotforgmail.service.util.MessagesUtil.GET;
 import static com.samoilov.dev.telegrambotforgmail.service.util.MessagesUtil.GET_FINISH;
 import static com.samoilov.dev.telegrambotforgmail.service.util.MessagesUtil.GMAIL;
+import static com.samoilov.dev.telegrambotforgmail.service.util.MessagesUtil.SEND;
 import static com.samoilov.dev.telegrambotforgmail.service.util.MessagesUtil.SEND_FINISH;
 import static com.samoilov.dev.telegrambotforgmail.service.util.MessagesUtil.SETTINGS;
 import static com.samoilov.dev.telegrambotforgmail.service.util.MessagesUtil.SETTINGS_DELETE;
@@ -42,7 +44,7 @@ public class GmailBotService {
     private final ApplicationEventPublisher eventPublisher;
 
     public SendMessage getResponseMessage(UpdateInformationDto preparedUpdate) {
-        String message = preparedUpdate.getMessage();
+        String message = preparedUpdate.getMessage().replaceAll("@\\w+\\s", "");
         UserDto savedUser = userService.saveUser(preparedUpdate.getUser());
         CommandType currentCommand = CommandType.parseCommand(message.split("\\s+")[0]);
 
@@ -110,28 +112,36 @@ public class GmailBotService {
     }
 
     private SendMessage getGmailProcessingMessage(Long chatId, Long telegramId, String message) {
+        Gmail gmail = gmailCacheService.getGmail(chatId);
         String[] splitMessage = message.split("\\s+", 2);
         boolean isSendProcess = splitMessage[0].equals(CommandType.SEND.getCommand());
 
-        if (splitMessage.length > 1) {
-            Gmail gmail = gmailCacheService.getGmail(chatId);
+        if (splitMessage.length == 1) {
+            return this.createSendMessage(
+                    chatId,
+                    isSendProcess ? SEND : GET,
+                    isSendProcess
+                            ? ButtonsUtil.getGmailSendMessageTemplateKeyboard()
+                            : ButtonsUtil.getGmailMessageReceiveKeyboard()
+            );
+        }
 
-            userService.addEmailAddress(telegramId, gmailService.getEmailAddress(gmail));
+        userService.addEmailAddress(telegramId, gmailService.getEmailAddress(gmail));
 
-            if (isSendProcess) {
-                gmailService.sendEmail(chatId, splitMessage[1], gmail);
-            } else {
-                gmailService.getMessagesByQuery(gmail, splitMessage[1], chatId)
-                        .forEach(receivedEmail -> eventPublisher.publishEvent(
-                                this.createSendMessage(chatId, receivedEmail, null)
-                        ));
-            }
+        if (isSendProcess) {
+            gmailService.sendEmail(chatId, splitMessage[1], gmail);
+        } else {
+            gmailService
+                    .getMessagesByQuery(gmail, splitMessage[1], chatId)
+                    .forEach(receivedEmail -> eventPublisher.publishEvent(
+                            this.createSendMessage(chatId, receivedEmail, null)
+                    ));
         }
 
         return this.createSendMessage(
                 chatId,
                 isSendProcess ? SEND_FINISH : GET_FINISH,
-                isSendProcess ? null : ButtonsUtil.getGmailMessageReceiveKeyboard()
+                isSendProcess ? ButtonsUtil.getGmailStartKeyboard() : ButtonsUtil.getGmailMessageReceiveKeyboard()
         );
     }
 

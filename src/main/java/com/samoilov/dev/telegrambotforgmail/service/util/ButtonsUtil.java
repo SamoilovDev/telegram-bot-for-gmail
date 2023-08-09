@@ -45,7 +45,7 @@ public class ButtonsUtil {
                 .keyboardRow(
                         List.of(
                                 InlineKeyboardButton.builder()
-                                        .text("Click to start working with Gmail")
+                                        .text("Click to work with Gmail")
                                         .callbackData("/gmail")
                                         .build()
                         )
@@ -100,6 +100,19 @@ public class ButtonsUtil {
 
         return InlineKeyboardMarkup.builder()
                 .keyboard(keyboard)
+                .build();
+    }
+
+    public static InlineKeyboardMarkup getGmailSendMessageTemplateKeyboard() {
+        return InlineKeyboardMarkup.builder()
+                .keyboardRow(
+                        List.of(
+                                InlineKeyboardButton.builder()
+                                        .text("Click to get template")
+                                        .switchInlineQueryCurrentChat("/send *change me* -> *change me* -> *change me*")
+                                        .build()
+                        )
+                )
                 .build();
     }
 

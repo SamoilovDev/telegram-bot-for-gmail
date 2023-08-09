@@ -14,7 +14,7 @@ public class MessagesUtil {
            """;
 
     public static final String INFO = """
-            This bot was created by @samoilov_vl.
+            This bot was created by [Vladimir Samoilov](https://t.me/samoilov_vl).
             """;
 
     public static final String AUTHORIZE = """
@@ -49,11 +49,18 @@ public class MessagesUtil {
             """;
 
     public static final String SEND = """
+            To send email, please, use this example and change <?> to your email data.
+            _Tip: if you want to skip something, just write '-' (You can not skip email:to)_
             /send <email:to> -> <subject> -> <body>
             """;
 
     public static final String SEND_FINISH = """
             You have successfully sent email!
+            """;
+
+    public static final String SEND_ERROR = """
+            Error during sending message, please try again.
+            _Tip: check if you used the template correctly_
             """;
 
     public static final String GET = """
