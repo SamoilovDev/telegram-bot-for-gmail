@@ -1,10 +1,12 @@
 package com.samoilov.dev.telegrambotforgmail.dto;
 
+import com.samoilov.dev.telegrambotforgmail.enums.ActiveType;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
+import java.time.LocalDateTime;
 import java.util.List;
 
 @Data
@@ -20,6 +22,12 @@ public class UserDto {
     private String lastName;
 
     private String userName;
+
+    private LocalDateTime createDate;
+
+    private Long commandCounter;
+
+    private ActiveType activeType;
 
     private List<String> emails;
 

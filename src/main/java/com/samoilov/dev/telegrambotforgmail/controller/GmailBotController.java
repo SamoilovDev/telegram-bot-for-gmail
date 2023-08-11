@@ -28,7 +28,11 @@ public class GmailBotController extends TelegramLongPollingBot {
     public void sendMessage(SendMessage responseMessage) {
         try {
             super.executeAsync(responseMessage);
-            log.info("Message '{}' was send to chat with id {}", responseMessage.getText(), responseMessage.getChatId());
+            log.info(
+                    "Message '{}' was send to chat with id {}",
+                    responseMessage.getText(),
+                    responseMessage.getChatId()
+            );
         } catch (TelegramApiException e) {
             log.warn(e.getMessage());
         }

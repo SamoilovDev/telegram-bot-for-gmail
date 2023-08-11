@@ -19,6 +19,8 @@ import org.telegram.telegrambots.meta.api.methods.ParseMode;
 import org.telegram.telegrambots.meta.api.methods.send.SendMessage;
 import org.telegram.telegrambots.meta.api.objects.replykeyboard.ReplyKeyboard;
 
+import java.util.Objects;
+
 import static com.samoilov.dev.telegrambotforgmail.service.util.MessagesUtil.AUTHORIZE;
 import static com.samoilov.dev.telegrambotforgmail.service.util.MessagesUtil.GET;
 import static com.samoilov.dev.telegrambotforgmail.service.util.MessagesUtil.GET_FINISH;
@@ -43,6 +45,10 @@ public class GmailBotService {
 
     private final ApplicationEventPublisher eventPublisher;
 
+    private static final String UNEXPECTED_VALUE = "Unexpected value: %s";
+
+    private static final String ABSENT_INFORMATION = "information is absent";
+
     public SendMessage getResponseMessage(UpdateInformationDto preparedUpdate) {
         String message = preparedUpdate.getMessage().replaceAll("@\\w+\\s", "");
         UserDto savedUser = userService.saveUser(preparedUpdate.getUser());
@@ -63,7 +69,7 @@ public class GmailBotService {
             case SETTINGS -> this.getSettingsMessage(
                     preparedUpdate.getChatId(), savedUser, message
             );
-            default -> throw new IllegalStateException("Unexpected value: " + currentCommand);
+            default -> throw new IllegalStateException(UNEXPECTED_VALUE.formatted(currentCommand));
         };
     }
 
@@ -72,7 +78,7 @@ public class GmailBotService {
             case START -> MessagesUtil.START.formatted(firstName);
             case INFO -> MessagesUtil.INFO;
             case ERROR -> MessagesUtil.ERROR;
-            default -> throw new IllegalStateException("Unexpected value: " + currentCommand);
+            default -> throw new IllegalStateException(UNEXPECTED_VALUE.formatted(currentCommand));
         };
 
         return this.createSendMessage(chatId, responseMessage, null);
@@ -99,12 +105,12 @@ public class GmailBotService {
         } else {
             String command = splitMessage[1];
             String preparedMessage = switch (command) {
-                case "stats" -> SETTINGS_STATS.formatted(userDto.getFirstName(), 0, "ENABLED");
+                case "stats" -> this.prepareStatsMessage(userDto);
                 case "delete" -> {
                     userService.disableUser(userDto.getTelegramId());
                     yield SETTINGS_DELETE.formatted(userDto.getFirstName());
                 }
-                default -> throw new IllegalStateException("Unexpected value: " + command);
+                default -> throw new IllegalStateException(UNEXPECTED_VALUE.formatted(command));
             };
 
             return this.createSendMessage(chatId, preparedMessage, null);
@@ -131,8 +137,7 @@ public class GmailBotService {
         if (isSendProcess) {
             gmailService.sendEmail(chatId, splitMessage[1], gmail);
         } else {
-            gmailService
-                    .getMessagesByQuery(gmail, splitMessage[1], chatId)
+            gmailService.getMessagesByQuery(gmail, splitMessage[1], chatId)
                     .forEach(receivedEmail -> eventPublisher.publishEvent(
                             this.createSendMessage(chatId, receivedEmail, null)
                     ));
@@ -141,7 +146,37 @@ public class GmailBotService {
         return this.createSendMessage(
                 chatId,
                 isSendProcess ? SEND_FINISH : GET_FINISH,
-                isSendProcess ? ButtonsUtil.getGmailStartKeyboard() : ButtonsUtil.getGmailMessageReceiveKeyboard()
+                isSendProcess
+                        ? ButtonsUtil.getGmailStartKeyboard()
+                        : ButtonsUtil.getGmailMessageReceiveKeyboard()
+        );
+    }
+
+    private String prepareStatsMessage(UserDto userDto) {
+        String firstCommandTime = Objects.isNull(userDto.getCreateDate())
+                ? ABSENT_INFORMATION
+                : userDto.getCreateDate().toString().replace('T', ' ');
+        StringBuilder emails = new StringBuilder("[");
+
+        if (Objects.isNull(userDto.getEmails()) || userDto.getEmails().isEmpty()) {
+            emails.delete(0, 1)
+                    .append(ABSENT_INFORMATION);
+        } else {
+            userDto.getEmails()
+                    .forEach(email -> emails.append(email).append(", "));
+            emails.delete(emails.length() - 2, emails.length())
+                    .append("]");
+        }
+
+        return SETTINGS_STATS.formatted(
+                userDto.getTelegramId(),
+                userDto.getFirstName(),
+                Objects.isNull(userDto.getLastName()) ? ABSENT_INFORMATION : userDto.getLastName(),
+                Objects.isNull(userDto.getUserName()) ? ABSENT_INFORMATION : userDto.getUserName(),
+                firstCommandTime,
+                userDto.getCommandCounter(),
+                userDto.getActiveType(),
+                emails.toString()
         );
     }
 

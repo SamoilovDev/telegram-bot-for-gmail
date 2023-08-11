@@ -54,6 +54,9 @@ public class InformationMapper {
                 .firstName(userEntity.getFirstName())
                 .lastName(userEntity.getLastName())
                 .userName(userEntity.getUserName())
+                .commandCounter(userEntity.getCommandCounter())
+                .createDate(userEntity.getCreatedAt())
+                .activeType(userEntity.getActiveType())
                 .emails(
                         userEntity.getEmails()
                                 .stream()

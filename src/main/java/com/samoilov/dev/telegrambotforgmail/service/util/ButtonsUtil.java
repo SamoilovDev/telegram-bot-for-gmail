@@ -109,7 +109,9 @@ public class ButtonsUtil {
                         List.of(
                                 InlineKeyboardButton.builder()
                                         .text("Click to get template")
-                                        .switchInlineQueryCurrentChat("/send *change me* -> *change me* -> *change me*")
+                                        .switchInlineQueryCurrentChat(
+                                                "/send <Required: email:to> -> <Optional: subject> -> <Optional: body>"
+                                        )
                                         .build()
                         )
                 )

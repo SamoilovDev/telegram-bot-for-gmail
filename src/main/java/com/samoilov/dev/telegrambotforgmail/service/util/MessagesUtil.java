@@ -34,9 +34,14 @@ public class MessagesUtil {
             """;
 
     public static final String SETTINGS_STATS = """
-            %s
+            Your telegram id: %s
+            Your first name: %s
+            Your last name: %s
+            Your user name: %s
+            Your first command was sent at: %s
             Count of commands: %s
             Active type of your account: %s
+            Authorized emails: %s
             """;
 
     public static final String SETTINGS_DELETE = """
@@ -45,13 +50,13 @@ public class MessagesUtil {
             """;
 
     public static final String GMAIL = """
-            To get messages from your Gmail account click on the button below message.
+            To get or send messages from your Gmail account click on the button below message.
             """;
 
     public static final String SEND = """
             To send email, please, use this example and change <?> to your email data.
-            _Tip: if you want to skip something, just write '-' (You can not skip email:to)_
-            /send <email:to> -> <subject> -> <body>
+            _Tip: if you want to skip something, just write <-> (You can not skip email:to)_
+            /send <Required: email:to> -> <Optional: subject> -> <Optional: body>
             """;
 
     public static final String SEND_FINISH = """
