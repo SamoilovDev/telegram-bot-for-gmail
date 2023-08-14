@@ -1,6 +1,6 @@
 package com.samoilov.dev.telegrambotforgmail.config;
 
-import com.samoilov.dev.telegrambotforgmail.controller.GmailBotController;
+import com.samoilov.dev.telegrambotforgmail.api.controller.GmailBotController;
 import lombok.AllArgsConstructor;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.context.event.ContextRefreshedEvent;
