@@ -31,7 +31,7 @@ public class GmailService {
     public List<String> getMessagesByQuery(Gmail userGmail, String query, Long chatId) {
         return this.getMessageListByQ(userGmail, query, chatId)
                 .stream()
-                .map(message -> this.getFullMessage(userGmail, message.getId()))
+                .map(message -> this.getFullMessage(userGmail, message.getId(), chatId))
                 .filter(message -> Objects.nonNull(message) && Objects.nonNull(message.getPayload()))
                 .map(message -> emailProcessingService.prepareMessagePart(message.getPayload()))
                 .toList();
@@ -66,9 +66,9 @@ public class GmailService {
 
             this.getMessagesFromGmail(gmail).send(GMAIL_USER_ID, preparedMessage).execute();
         } catch (IOException | MessagingException e) {
-            eventPublisher.publishEvent(
-                    new SendMessage(String.valueOf(chatId), "Error during sending message, please try again later.")
-            );
+            eventPublisher.publishEvent(new SendMessage(
+                    String.valueOf(chatId), "Error during sending message, please try again later."
+            ));
             throw new GmailException(e);
         }
     }
@@ -81,21 +81,23 @@ public class GmailService {
                     .execute()
                     .getMessages();
         } catch (IOException e) {
-            eventPublisher.publishEvent(
-                    new SendMessage(String.valueOf(chatId), "Error during getting messages, please try again later")
-            );
+            eventPublisher.publishEvent(new SendMessage(
+                    String.valueOf(chatId), "Error during getting messages, please try again later"
+            ));
             throw new GmailException(e);
         }
     }
 
-    private Message getFullMessage(Gmail gmail, String messageId) {
+    private Message getFullMessage(Gmail gmail, String messageId, Long chatId) {
         try {
-            return this
-                    .getMessagesFromGmail(gmail)
+            return this.getMessagesFromGmail(gmail)
                     .get(GMAIL_USER_ID, messageId)
                     .setFormat(FORMAT)
                     .execute();
         } catch (IOException e) {
+            eventPublisher.publishEvent(new SendMessage(
+                    String.valueOf(chatId), "Error during getting messages, please try again later"
+            ));
             throw new GmailException(e);
         }
     }

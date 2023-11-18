@@ -1,7 +1,7 @@
 package com.samoilov.dev.telegrambotforgmail.api.service.domain;
 
 import com.samoilov.dev.telegrambotforgmail.api.exception.UserNotFoundException;
-import com.samoilov.dev.telegrambotforgmail.api.service.mapper.InformationMapper;
+import com.samoilov.dev.telegrambotforgmail.api.mapper.InformationMapper;
 import com.samoilov.dev.telegrambotforgmail.store.dto.UserDto;
 import com.samoilov.dev.telegrambotforgmail.store.entity.EmailEntity;
 import com.samoilov.dev.telegrambotforgmail.store.entity.UserEntity;
@@ -21,29 +21,14 @@ public class UserService {
 
     private final UserRepository userRepository;
 
-    public List<Long> getAllChatIds() {
-        return userRepository
-                .findAll()
-                .stream()
-                .map(UserEntity::getChatIds)
-                .flatMap(List::stream)
-                .toList();
-    }
-
-    private UserEntity getUserEntityByTelegramId(Long telegramId) {
-        return userRepository
-                .findByTelegramId(telegramId)
-                .orElseThrow(UserNotFoundException::new);
-    }
-
     @Transactional
     public UserDto saveUser(User user) {
         if (userRepository.existsByTelegramId(user.getId())) {
             UserEntity foundedUser = this.getUserEntityByTelegramId(user.getId());
 
-            return foundedUser.getCommandCounter() % 10 == 0
-                    ? this.saveChangedUserData(user)
-                    : informationMapper.mapEntityToDto(foundedUser);
+            if (foundedUser.getCommandCounter() % 10 == 0) {
+                return informationMapper.mapEntityToDto(foundedUser);
+            }
         }
 
         return this.saveChangedUserData(user);
@@ -77,13 +62,26 @@ public class UserService {
         userRepository.disableUser(telegramId);
     }
 
+    public List<Long> getAllChatIds() {
+        return userRepository
+                .findAll()
+                .stream()
+                .map(UserEntity::getChatIds)
+                .flatMap(List::stream)
+                .toList();
+    }
+
 
     private UserDto saveChangedUserData(User userToSave) {
         UserEntity mappedUser = informationMapper.mapTelegramUserToEntity(userToSave);
 
-        return informationMapper.mapEntityToDto(
-                userRepository.save(mappedUser)
-        );
+        return informationMapper.mapEntityToDto(userRepository.save(mappedUser));
+    }
+
+    private UserEntity getUserEntityByTelegramId(Long telegramId) {
+        return userRepository
+                .findByTelegramId(telegramId)
+                .orElseThrow(UserNotFoundException::new);
     }
 
 }

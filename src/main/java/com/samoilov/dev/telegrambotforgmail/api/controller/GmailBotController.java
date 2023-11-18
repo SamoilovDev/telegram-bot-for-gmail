@@ -1,7 +1,7 @@
 package com.samoilov.dev.telegrambotforgmail.api.controller;
 
 import com.samoilov.dev.telegrambotforgmail.api.service.GmailBotService;
-import com.samoilov.dev.telegrambotforgmail.api.service.mapper.InformationMapper;
+import com.samoilov.dev.telegrambotforgmail.api.mapper.InformationMapper;
 import com.samoilov.dev.telegrambotforgmail.config.properties.TelegramProperties;
 import com.samoilov.dev.telegrambotforgmail.store.dto.UpdateInformationDto;
 import lombok.RequiredArgsConstructor;

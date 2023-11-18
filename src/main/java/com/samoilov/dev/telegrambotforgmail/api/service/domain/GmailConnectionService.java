@@ -15,6 +15,8 @@ import com.samoilov.dev.telegrambotforgmail.api.exception.AuthorizationUrlCreati
 import com.samoilov.dev.telegrambotforgmail.api.exception.GmailException;
 import com.samoilov.dev.telegrambotforgmail.api.service.util.ButtonsUtil;
 import com.samoilov.dev.telegrambotforgmail.api.service.util.MessagesUtil;
+import jakarta.annotation.PostConstruct;
+import jakarta.annotation.PreDestroy;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.context.ApplicationEventPublisher;
@@ -43,16 +45,12 @@ public class GmailConnectionService {
 
     private final List<String> scopes;
 
+    private File tokenStore;
+
     private static final String OAUTH_2_GOOGLEAPIS_COM_TOKEN = "https://oauth2.googleapis.com/token";
 
     public String getAuthorizationUrl(Long chatId) {
         try {
-            File tokenStore = new File(googleProperties.getTokensPath());
-
-            if (!tokenStore.exists()) {
-                Files.createDirectories(tokenStore.toPath());
-            }
-
             return new GoogleAuthorizationCodeFlow
                     .Builder(netHttpTransport, jsonFactory, googleClientSecrets, scopes)
                     .setDataStoreFactory(new FileDataStoreFactory(tokenStore))
@@ -62,8 +60,9 @@ public class GmailConnectionService {
                     .setRedirectUri("http://localhost:8080/oauth2callback/".concat(String.valueOf(chatId)))
                     .build();
         } catch (IOException | NullPointerException e) {
-//            this.sendErrorResponse(chatId);
-            log.error("",e);
+            eventPublisher.publishEvent(
+                    new SendMessage(String.valueOf(chatId), "Impossible to authorize now, please try again")
+            );
             throw new AuthorizationUrlCreatingException(e);
         }
     }
@@ -107,17 +106,26 @@ public class GmailConnectionService {
 
     void sendErrorResponse(Long chatId) {
         eventPublisher.publishEvent(
-                SendMessage
-                        .builder()
+                SendMessage.builder()
                         .chatId(chatId)
                         .text(MessagesUtil.AUTHORIZATION_FAILED)
-                        .replyMarkup(
-                                ButtonsUtil.getAuthorizeInlineKeyboard(
-                                        this.getAuthorizationUrl(chatId)
-                                )
-                        )
+                        .replyMarkup(ButtonsUtil.getAuthorizeInlineKeyboard(this.getAuthorizationUrl(chatId)))
                         .build()
         );
+    }
+
+    @PostConstruct
+    private void createTokenStore() throws IOException {
+        tokenStore = new File(googleProperties.getTokensPath());
+
+        if (!tokenStore.exists()) {
+            Files.createDirectories(tokenStore.toPath());
+        }
+    }
+
+    @PreDestroy
+    private void deleteTokenStore() throws IOException {
+        Files.deleteIfExists(tokenStore.toPath());
     }
 
 }

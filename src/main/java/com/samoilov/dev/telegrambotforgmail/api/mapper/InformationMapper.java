@@ -1,4 +1,4 @@
-package com.samoilov.dev.telegrambotforgmail.api.service.mapper;
+package com.samoilov.dev.telegrambotforgmail.api.mapper;
 
 import com.samoilov.dev.telegrambotforgmail.store.dto.EmailMessageDto;
 import com.samoilov.dev.telegrambotforgmail.store.dto.UpdateInformationDto;
@@ -21,8 +21,6 @@ import javax.mail.internet.MimeMessage;
 import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Properties;
-
-import static org.apache.logging.log4j.util.Strings.EMPTY;
 
 @Mapper(componentModel = "spring", imports = LocalDateTime.class)
 public interface InformationMapper {
@@ -64,7 +62,7 @@ public interface InformationMapper {
 
     default MimeMessage mapEmailMessageDtoToMime(EmailMessageDto emailMessageDto) {
         try {
-            Session session = Session.getDefaultInstance(new Properties(), null);
+            Session session = Session.getDefaultInstance(new Properties());
             MimeMessage mimeMessage = new MimeMessage(session);
 
             mimeMessage.setFrom(new InternetAddress(emailMessageDto.getFrom()));

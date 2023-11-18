@@ -7,7 +7,6 @@ import com.samoilov.dev.telegrambotforgmail.api.exception.GmailException;
 import com.samoilov.dev.telegrambotforgmail.api.service.util.ButtonsUtil;
 import com.samoilov.dev.telegrambotforgmail.api.service.util.MessagesUtil;
 import lombok.RequiredArgsConstructor;
-import org.springframework.cache.Cache;
 import org.springframework.cache.CacheManager;
 import org.springframework.cache.annotation.Cacheable;
 import org.springframework.context.ApplicationEventPublisher;
@@ -16,6 +15,7 @@ import org.springframework.stereotype.Service;
 import org.telegram.telegrambots.meta.api.methods.send.SendMessage;
 
 import java.util.Objects;
+import java.util.Optional;
 
 @Service
 @RequiredArgsConstructor
@@ -44,13 +44,16 @@ public class GmailCacheService {
 
     @Cacheable(cacheNames = "authenticationInfo", key = "#chatId")
     public AuthenticationInfoDto getAuthInfoByChatId(Long chatId) {
-        Cache cache = Objects.requireNonNull(cacheManager.getCache("authenticationInfo"));
-        AuthenticationInfoDto authenticationInfo =  cache.get(chatId, AuthenticationInfoDto.class);
+        AuthenticationInfoDto authenticationInfo = Optional.ofNullable(cacheManager.getCache("authenticationInfo"))
+                .map(authCache -> authCache.get(chatId, AuthenticationInfoDto.class))
+                .orElse(null);
 
         if (Objects.isNull(authenticationInfo)) {
             gmailConnectionService.sendErrorResponse(chatId);
             throw new GmailException();
-        } else return authenticationInfo;
+        }
+
+        return authenticationInfo;
     }
 
     @Cacheable(cacheNames = "gmail", key = "#chatId")

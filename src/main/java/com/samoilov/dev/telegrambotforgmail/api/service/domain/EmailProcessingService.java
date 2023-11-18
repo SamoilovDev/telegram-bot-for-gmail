@@ -3,7 +3,7 @@ package com.samoilov.dev.telegrambotforgmail.api.service.domain;
 import com.google.api.services.gmail.model.MessagePart;
 import com.google.api.services.gmail.model.MessagePartBody;
 import com.google.api.services.gmail.model.MessagePartHeader;
-import com.samoilov.dev.telegrambotforgmail.api.service.mapper.InformationMapper;
+import com.samoilov.dev.telegrambotforgmail.api.mapper.InformationMapper;
 import com.samoilov.dev.telegrambotforgmail.store.dto.EmailMessageDto;
 import com.samoilov.dev.telegrambotforgmail.api.exception.GmailException;
 import com.samoilov.dev.telegrambotforgmail.api.service.util.ButtonsUtil;
@@ -11,18 +11,15 @@ import com.samoilov.dev.telegrambotforgmail.api.service.util.MessagesUtil;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.context.ApplicationEventPublisher;
+import org.springframework.http.MediaType;
 import org.springframework.stereotype.Service;
 import org.telegram.telegrambots.meta.api.methods.ParseMode;
 import org.telegram.telegrambots.meta.api.methods.send.SendMessage;
 
 import javax.mail.MessagingException;
 import javax.mail.internet.MimeMessage;
-import java.util.Base64;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.Objects;
-import java.util.Optional;
+import java.util.*;
+import java.util.function.Function;
 
 import static com.samoilov.dev.telegrambotforgmail.api.service.util.RegexpUtil.EMAIL_REGEXP;
 import static com.samoilov.dev.telegrambotforgmail.api.service.util.RegexpUtil.HTML_TAG_REGEXP;
@@ -56,43 +53,44 @@ public class EmailProcessingService {
 
     public String prepareMessagePart(MessagePart messagePart) {
         StringBuilder preparedMessage = this.createPreparedHeadersPart(messagePart.getHeaders());
-        Optional<String> bodyPart = Optional.empty();
         String mimeType = messagePart.getMimeType();
 
-        if (Objects.nonNull(mimeType) && mimeType.equals("multipart/alternative")) {
-            bodyPart = messagePart.getParts()
-                    .stream()
-                    .filter(this::filterBody)
-                    .map(MessagePart::getBody)
-                    .map(MessagePartBody::getData)
-                    .findFirst();
+        if (Objects.isNull(mimeType) || !mimeType.equals("multipart/alternative")) {
+            return EMPTY;
         }
 
-        return bodyPart.map(body -> this.createFullEmailMessage(preparedMessage, body))
+        return messagePart.getParts()
+                .stream()
+                .filter(this::filterBody)
+                .map(MessagePart::getBody)
+                .map(MessagePartBody::getData)
+                .findFirst()
+                .map(body -> this.createFullEmailMessage(preparedMessage, body))
                 .orElse(EMPTY);
     }
 
     public MimeMessage prepareRawMessageToMime(String rawMessage, String fromEmail, Long chatId) {
         try {
             String[] splitRawMessage = rawMessage.split(NEXT_MAIL_POINT_REGEXP, 3);
+            Function<String, String> checkByEmptyFunc = rawPart -> Optional.of(rawPart)
+                    .filter(part -> !part.equals(NOTHING))
+                    .orElse(null);
 
             if (splitRawMessage.length < 3 || !splitRawMessage[0].matches(EMAIL_REGEXP)) {
                 throw new MessagingException();
             }
 
-            EmailMessageDto emailMessageDto = EmailMessageDto
-                    .builder()
-                    .from(fromEmail)
-                    .to(splitRawMessage[0])
-                    .subject(splitRawMessage[1].equals(NOTHING) ? null : splitRawMessage[1])
-                    .bodyText(splitRawMessage[2].equals(NOTHING) ? null : splitRawMessage[2])
-                    .build();
-
-            return informationMapper.mapEmailMessageDtoToMime(emailMessageDto);
+            return informationMapper.mapEmailMessageDtoToMime(
+                    EmailMessageDto.builder()
+                            .from(fromEmail)
+                            .to(splitRawMessage[0])
+                            .subject(checkByEmptyFunc.apply(splitRawMessage[1]))
+                            .bodyText(checkByEmptyFunc.apply(splitRawMessage[2]))
+                            .build()
+            );
         } catch (MessagingException e) {
             eventPublisher.publishEvent(
-                    SendMessage
-                            .builder()
+                    SendMessage.builder()
                             .chatId(chatId)
                             .text(MessagesUtil.SEND_ERROR)
                             .replyMarkup(ButtonsUtil.getGmailSendMessageTemplateKeyboard())
@@ -105,27 +103,21 @@ public class EmailProcessingService {
 
     private StringBuilder createPreparedHeadersPart(List<MessagePartHeader> headers) {
         StringBuilder preparedMessage = new StringBuilder("Email found:\n");
-        Map<String, String> headersMap = new HashMap<>();
 
         headers.stream()
                 .filter(header -> REQUIRED_HEADER_NAMES.contains(header.getName()))
-                .forEach(header -> {
+                .forEachOrdered(header -> {
                     String headerName = header.getName();
-                    String value = header.getValue();
-                    headersMap.put(
-                            header.getName(),
-                            headerName.equals("Date")
-                                    ? value.substring(0, value.length() - 6)
-                                    : value
-                    );
-                });
+                    String value = headerName.equals("Date")
+                            ? header.getValue().replaceAll("\\+\\d+", EMPTY)
+                            : header.getValue();
 
-        REQUIRED_HEADER_NAMES.stream()
-                .filter(headersMap::containsKey)
-                .forEachOrdered(headerName -> preparedMessage.append(NEW_LINE)
-                        .append(headerName)
-                        .append(": ")
-                        .append(headersMap.get(headerName)));
+                    preparedMessage
+                            .append(NEW_LINE)
+                            .append(headerName)
+                            .append(": ")
+                            .append(value);
+                });
 
         return preparedMessage;
     }
@@ -134,9 +126,10 @@ public class EmailProcessingService {
         MessagePartBody body = messagePart.getBody();
         String mimeTypePart = messagePart.getMimeType();
 
-        return (mimeTypePart.equals("text/plain") || mimeTypePart.equals("text/html"))
-                && Objects.nonNull(body)
-                && !body.getData().isBlank();
+        return Optional.ofNullable(body)
+                .map(b -> (mimeTypePart.equals(MediaType.TEXT_PLAIN_VALUE) || mimeTypePart.equals(MediaType.TEXT_HTML_VALUE))
+                        && !b.getData().isBlank())
+                .orElse(false);
     }
 
     private String createFullEmailMessage(StringBuilder preparedHeaders, String body) {
@@ -147,9 +140,10 @@ public class EmailProcessingService {
                 .replaceAll(HTML_WHITESPACES_REGEXP, NEW_LINE)
                 .replaceAll(REDUNDANT_SPACES_REGEXP, NEW_LINE);
 
-        preparedHeaders.append("\n\nMessage:\n").append(abbreviatedMessage);
-
-        return preparedHeaders.toString();
+        return preparedHeaders
+                .append("\n\nMessage:\n")
+                .append(abbreviatedMessage)
+                .toString();
     }
 
 }
