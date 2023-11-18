@@ -15,7 +15,7 @@ import java.util.concurrent.TimeUnit;
 @EnableCaching
 public class CacheConfig {
 
-    public static final List<String> CACHE_NAMES = List.of(
+    private static final List<String> CACHE_NAMES = List.of(
             "gmail",
             "authenticationInfo"
     );

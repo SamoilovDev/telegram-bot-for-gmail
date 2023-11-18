@@ -46,7 +46,6 @@ public class GmailBotService {
     private final ApplicationEventPublisher eventPublisher;
 
     private static final String UNEXPECTED_VALUE = "Unexpected value: %s";
-
     private static final String ABSENT_INFORMATION = "information is absent";
 
     public SendMessage getResponseMessage(UpdateInformationDto preparedUpdate) {
@@ -90,19 +89,20 @@ public class GmailBotService {
 
         if (splitMessage.length == 1) {
             return this.createSendMessage(chatId, SETTINGS, ButtonsUtil.getInlineKeyboard(KeyboardType.SETTINGS));
-        } else {
-            String command = splitMessage[1];
-            String preparedMessage = switch (command) {
-                case "stats" -> this.prepareStatsMessage(userDto);
-                case "delete" -> {
-                    userService.disableUser(userDto.getTelegramId());
-                    yield SETTINGS_DELETE.formatted(userDto.getFirstName());
-                }
-                default -> throw new IllegalStateException(UNEXPECTED_VALUE.formatted(command));
-            };
-
-            return this.createSendMessage(chatId, preparedMessage, null);
         }
+
+        String command = splitMessage[1];
+        String preparedMessage = switch (command) {
+            case "stats" -> this.prepareStatsMessage(userDto);
+            case "delete" -> {
+                userService.disableUser(userDto.getTelegramId());
+                yield SETTINGS_DELETE.formatted(userDto.getFirstName());
+            }
+            default -> throw new IllegalStateException(UNEXPECTED_VALUE.formatted(command));
+        };
+
+        return this.createSendMessage(chatId, preparedMessage, null);
+
     }
 
     private SendMessage getGmailProcessingMessage(Long chatId, Long telegramId, String message) {
@@ -125,7 +125,8 @@ public class GmailBotService {
         if (isSendProcess) {
             gmailService.sendEmail(chatId, splitMessage[1], gmail);
         } else {
-            gmailService.getMessagesByQuery(gmail, splitMessage[1], chatId)
+            gmailService
+                    .getMessagesByQuery(gmail, splitMessage[1], chatId)
                     .forEach(receivedEmail -> eventPublisher.publishEvent(
                             this.createSendMessage(chatId, receivedEmail, null)
                     ));

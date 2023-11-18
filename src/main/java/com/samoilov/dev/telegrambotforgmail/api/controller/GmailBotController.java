@@ -29,7 +29,7 @@ public class GmailBotController extends TelegramLongPollingBot {
         try {
             super.executeAsync(responseMessage);
             log.info(
-                    "Message '{}' was send to chat with id {}",
+                    "Message \"{}\" was send to chat with id {}",
                     responseMessage.getText(),
                     responseMessage.getChatId()
             );

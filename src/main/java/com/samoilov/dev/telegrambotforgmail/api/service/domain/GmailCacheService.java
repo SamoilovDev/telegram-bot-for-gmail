@@ -29,8 +29,7 @@ public class GmailCacheService {
 
     @EventListener(AuthenticationInfoDto.class)
     public void handleAndSaveAuthInfoDto(AuthenticationInfoDto authenticationInfoDto) {
-        Objects
-                .requireNonNull(cacheManager.getCache("authenticationInfo"))
+        Objects.requireNonNull(cacheManager.getCache("authenticationInfo"))
                 .put(authenticationInfoDto.getChatId(), authenticationInfoDto);
 
         eventPublisher.publishEvent(

@@ -107,8 +107,7 @@ public class EmailProcessingService {
         StringBuilder preparedMessage = new StringBuilder("Email found:\n");
         Map<String, String> headersMap = new HashMap<>();
 
-        headers
-                .stream()
+        headers.stream()
                 .filter(header -> REQUIRED_HEADER_NAMES.contains(header.getName()))
                 .forEach(header -> {
                     String headerName = header.getName();
@@ -121,8 +120,7 @@ public class EmailProcessingService {
                     );
                 });
 
-        REQUIRED_HEADER_NAMES
-                .stream()
+        REQUIRED_HEADER_NAMES.stream()
                 .filter(headersMap::containsKey)
                 .forEachOrdered(headerName -> preparedMessage.append(NEW_LINE)
                         .append(headerName)

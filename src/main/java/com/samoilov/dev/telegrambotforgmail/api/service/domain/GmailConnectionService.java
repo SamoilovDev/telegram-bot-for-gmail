@@ -16,14 +16,17 @@ import com.samoilov.dev.telegrambotforgmail.api.exception.GmailException;
 import com.samoilov.dev.telegrambotforgmail.api.service.util.ButtonsUtil;
 import com.samoilov.dev.telegrambotforgmail.api.service.util.MessagesUtil;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.stereotype.Service;
 import org.telegram.telegrambots.meta.api.methods.send.SendMessage;
 
 import java.io.File;
 import java.io.IOException;
+import java.nio.file.Files;
 import java.util.List;
 
+@Slf4j
 @Service
 @RequiredArgsConstructor
 public class GmailConnectionService {
@@ -44,27 +47,30 @@ public class GmailConnectionService {
 
     public String getAuthorizationUrl(Long chatId) {
         try {
+            File tokenStore = new File(googleProperties.getTokensPath());
+
+            if (!tokenStore.exists()) {
+                Files.createDirectories(tokenStore.toPath());
+            }
+
             return new GoogleAuthorizationCodeFlow
                     .Builder(netHttpTransport, jsonFactory, googleClientSecrets, scopes)
-                    .setDataStoreFactory(
-                            new FileDataStoreFactory(
-                                    new File(googleProperties.getTokensPath())
-                            )
-                    )
+                    .setDataStoreFactory(new FileDataStoreFactory(tokenStore))
                     .setAccessType("offline")
                     .build()
                     .newAuthorizationUrl()
                     .setRedirectUri("http://localhost:8080/oauth2callback/".concat(String.valueOf(chatId)))
                     .build();
         } catch (IOException | NullPointerException e) {
-            this.sendErrorResponse(chatId);
+//            this.sendErrorResponse(chatId);
+            log.error("",e);
             throw new AuthorizationUrlCreatingException(e);
         }
     }
 
 
     @SuppressWarnings("deprecation")
-    protected Credential exchangeCode(String authCode, String redirectUri, Long chatId) {
+    Credential exchangeCode(String authCode, String redirectUri, Long chatId) {
         try {
             GoogleClientSecrets.Details details = googleClientSecrets.getDetails();
             GoogleTokenResponse response = new GoogleAuthorizationCodeTokenRequest(
@@ -92,14 +98,14 @@ public class GmailConnectionService {
         }
     }
 
-    protected Gmail createGmailService(Credential credential) {
+    Gmail createGmailService(Credential credential) {
         return new Gmail
                 .Builder(netHttpTransport, jsonFactory, credential)
                 .setApplicationName(googleProperties.getApplicationName())
                 .build();
     }
 
-    protected void sendErrorResponse(Long chatId) {
+    void sendErrorResponse(Long chatId) {
         eventPublisher.publishEvent(
                 SendMessage
                         .builder()

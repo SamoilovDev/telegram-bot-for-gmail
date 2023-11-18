@@ -1,0 +1,17 @@
+version: '3.8'
+
+services:
+  db:
+    image: mysql:latest
+    environment:
+      MYSQL_ROOT_PASSWORD: qq11qq22qq33
+      MYSQL_DATABASE: telegram-bot-for-gmail-db
+    ports:
+      - "3306:3306"
+    volumes:
+      - mysql-data:/var/lib/mysql
+    command: '--default-authentication-plugin=mysql_native_password'
+    restart: always
+
+volumes:
+  mysql-data:

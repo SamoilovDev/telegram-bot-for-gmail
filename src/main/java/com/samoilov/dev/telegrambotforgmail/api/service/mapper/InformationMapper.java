@@ -29,8 +29,8 @@ public interface InformationMapper {
 
     @Mappings({
             @Mapping(source = "id", target = "telegramId"),
-            @Mapping(source = "lastName", target = "lastName", defaultValue = EMPTY),
-            @Mapping(source = "userName", target = "userName", defaultValue = EMPTY),
+            @Mapping(source = "lastName", target = "lastName"),
+            @Mapping(source = "userName", target = "userName"),
             @Mapping(target = "updatedAt", expression = "java(LocalDateTime.now())")
     })
     UserEntity mapTelegramUserToEntity(User user);
@@ -62,16 +62,20 @@ public interface InformationMapper {
                 .toList();
     }
 
-    default MimeMessage mapEmailMessageDtoToMime(EmailMessageDto emailMessageDto) throws MessagingException {
-        Session session = Session.getDefaultInstance(new Properties(), null);
-        MimeMessage mimeMessage = new MimeMessage(session);
+    default MimeMessage mapEmailMessageDtoToMime(EmailMessageDto emailMessageDto) {
+        try {
+            Session session = Session.getDefaultInstance(new Properties(), null);
+            MimeMessage mimeMessage = new MimeMessage(session);
 
-        mimeMessage.setFrom(new InternetAddress(emailMessageDto.getFrom()));
-        mimeMessage.addRecipient(MimeMessage.RecipientType.TO, new InternetAddress(emailMessageDto.getTo()));
-        mimeMessage.setSubject(emailMessageDto.getSubject());
-        mimeMessage.setText(emailMessageDto.getBodyText());
+            mimeMessage.setFrom(new InternetAddress(emailMessageDto.getFrom()));
+            mimeMessage.addRecipient(MimeMessage.RecipientType.TO, new InternetAddress(emailMessageDto.getTo()));
+            mimeMessage.setSubject(emailMessageDto.getSubject());
+            mimeMessage.setText(emailMessageDto.getBodyText());
 
-        return mimeMessage;
+            return mimeMessage;
+        } catch (MessagingException e) {
+            throw new RuntimeException(e);
+        }
     }
 
     default UpdateInformationDto mapFullUpdateToInformationDto(Update update) {

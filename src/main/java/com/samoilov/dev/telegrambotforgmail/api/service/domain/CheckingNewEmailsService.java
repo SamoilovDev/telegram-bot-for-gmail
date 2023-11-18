@@ -45,6 +45,10 @@ public class CheckingNewEmailsService {
                 .forEach(chatId -> gmailMap.put(chatId, cache.get(chatId, Gmail.class)));
 
         gmailMap.forEach((chatId, gmail) -> {
+            if (Objects.isNull(chatId) || Objects.isNull(gmail)) {
+                return;
+            }
+
             String lastUnreadMessage = gmailService.getMessagesByQuery(gmail, QueriesUtil.UNREAD, chatId).get(0);
             Matcher matcher = Pattern.compile(RegexpUtil.EMAIL_DATE_REGEXP).matcher(lastUnreadMessage);
 

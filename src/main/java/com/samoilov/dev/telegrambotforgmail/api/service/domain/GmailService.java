@@ -29,8 +29,7 @@ public class GmailService {
     private static final String FORMAT = "full";
 
     public List<String> getMessagesByQuery(Gmail userGmail, String query, Long chatId) {
-        return this
-                .getMessageListByQ(userGmail, query, chatId)
+        return this.getMessageListByQ(userGmail, query, chatId)
                 .stream()
                 .map(message -> this.getFullMessage(userGmail, message.getId()))
                 .filter(message -> Objects.nonNull(message) && Objects.nonNull(message.getPayload()))
@@ -40,8 +39,7 @@ public class GmailService {
 
     public String getEmailAddress(Gmail gmail) {
         try {
-            return gmail
-                    .users()
+            return gmail.users()
                     .getProfile(GMAIL_USER_ID)
                     .execute()
                     .getEmailAddress();
@@ -57,7 +55,7 @@ public class GmailService {
         this.sendEmailMessage(userGmail, mimeMessage, chatId);
     }
 
-    private void sendEmailMessage(Gmail userGmail, MimeMessage emailMessage, Long chatId) {
+    private void sendEmailMessage(Gmail gmail, MimeMessage emailMessage, Long chatId) {
         try (ByteArrayOutputStream buffer = new ByteArrayOutputStream()) {
             emailMessage.writeTo(buffer);
 
@@ -66,55 +64,44 @@ public class GmailService {
 
             preparedMessage.setRaw(encodedEmail);
 
-            userGmail
-                    .users()
-                    .messages()
-                    .send(GMAIL_USER_ID, preparedMessage)
-                    .execute();
+            this.getMessagesFromGmail(gmail).send(GMAIL_USER_ID, preparedMessage).execute();
         } catch (IOException | MessagingException e) {
             eventPublisher.publishEvent(
-                    SendMessage
-                            .builder()
-                            .chatId(chatId)
-                            .text("Error during sending message, please try again later.")
-                            .build()
+                    new SendMessage(String.valueOf(chatId), "Error during sending message, please try again later.")
             );
             throw new GmailException(e);
         }
     }
 
-    private List<Message> getMessageListByQ(Gmail userGmail, String query, Long chatId) {
+    private List<Message> getMessageListByQ(Gmail gmail, String query, Long chatId) {
         try {
-            return userGmail
-                    .users()
-                    .messages()
+            return this.getMessagesFromGmail(gmail)
                     .list(GMAIL_USER_ID)
                     .setQ(query)
                     .execute()
                     .getMessages();
         } catch (IOException e) {
             eventPublisher.publishEvent(
-                    SendMessage
-                            .builder()
-                            .chatId(chatId)
-                            .text("Error during getting messages, please try again later")
-                            .build()
+                    new SendMessage(String.valueOf(chatId), "Error during getting messages, please try again later")
             );
             throw new GmailException(e);
         }
     }
 
-    private Message getFullMessage(Gmail userGmail, String messageId) {
+    private Message getFullMessage(Gmail gmail, String messageId) {
         try {
-            return userGmail
-                    .users()
-                    .messages()
+            return this
+                    .getMessagesFromGmail(gmail)
                     .get(GMAIL_USER_ID, messageId)
                     .setFormat(FORMAT)
                     .execute();
         } catch (IOException e) {
             throw new GmailException(e);
         }
+    }
+
+    private Gmail.Users.Messages getMessagesFromGmail(Gmail gmail) {
+        return gmail.users().messages();
     }
 
 }
