@@ -1,16 +1,16 @@
-package com.samoilov.dev.telegrambotforgmail.api.service;
+package com.samoilov.dev.telegrambotforgmail.service;
 
 import com.google.api.services.gmail.Gmail;
 import com.samoilov.dev.telegrambotforgmail.store.dto.UpdateInformationDto;
 import com.samoilov.dev.telegrambotforgmail.store.dto.UserDto;
 import com.samoilov.dev.telegrambotforgmail.store.enums.CommandType;
 import com.samoilov.dev.telegrambotforgmail.store.enums.KeyboardType;
-import com.samoilov.dev.telegrambotforgmail.api.service.domain.GmailCacheService;
-import com.samoilov.dev.telegrambotforgmail.api.service.domain.GmailConnectionService;
-import com.samoilov.dev.telegrambotforgmail.api.service.domain.GmailService;
-import com.samoilov.dev.telegrambotforgmail.api.service.domain.UserService;
-import com.samoilov.dev.telegrambotforgmail.api.service.util.ButtonsUtil;
-import com.samoilov.dev.telegrambotforgmail.api.service.util.MessagesUtil;
+import com.samoilov.dev.telegrambotforgmail.service.domain.GmailCacheService;
+import com.samoilov.dev.telegrambotforgmail.service.domain.GmailConnectionService;
+import com.samoilov.dev.telegrambotforgmail.service.domain.GmailService;
+import com.samoilov.dev.telegrambotforgmail.service.domain.UserService;
+import com.samoilov.dev.telegrambotforgmail.util.ButtonsUtil;
+import com.samoilov.dev.telegrambotforgmail.util.MessagesUtil;
 import jakarta.validation.constraints.NotNull;
 import lombok.RequiredArgsConstructor;
 import org.springframework.context.ApplicationEventPublisher;
@@ -21,15 +21,15 @@ import org.telegram.telegrambots.meta.api.objects.replykeyboard.ReplyKeyboard;
 
 import java.util.Objects;
 
-import static com.samoilov.dev.telegrambotforgmail.api.service.util.MessagesUtil.AUTHORIZE;
-import static com.samoilov.dev.telegrambotforgmail.api.service.util.MessagesUtil.GET;
-import static com.samoilov.dev.telegrambotforgmail.api.service.util.MessagesUtil.GET_FINISH;
-import static com.samoilov.dev.telegrambotforgmail.api.service.util.MessagesUtil.GMAIL;
-import static com.samoilov.dev.telegrambotforgmail.api.service.util.MessagesUtil.SEND;
-import static com.samoilov.dev.telegrambotforgmail.api.service.util.MessagesUtil.SEND_FINISH;
-import static com.samoilov.dev.telegrambotforgmail.api.service.util.MessagesUtil.SETTINGS;
-import static com.samoilov.dev.telegrambotforgmail.api.service.util.MessagesUtil.SETTINGS_DELETE;
-import static com.samoilov.dev.telegrambotforgmail.api.service.util.MessagesUtil.SETTINGS_STATS;
+import static com.samoilov.dev.telegrambotforgmail.util.MessagesUtil.AUTHORIZE;
+import static com.samoilov.dev.telegrambotforgmail.util.MessagesUtil.GET;
+import static com.samoilov.dev.telegrambotforgmail.util.MessagesUtil.GET_FINISH;
+import static com.samoilov.dev.telegrambotforgmail.util.MessagesUtil.GMAIL;
+import static com.samoilov.dev.telegrambotforgmail.util.MessagesUtil.SEND;
+import static com.samoilov.dev.telegrambotforgmail.util.MessagesUtil.SEND_FINISH;
+import static com.samoilov.dev.telegrambotforgmail.util.MessagesUtil.SETTINGS;
+import static com.samoilov.dev.telegrambotforgmail.util.MessagesUtil.SETTINGS_DELETE;
+import static com.samoilov.dev.telegrambotforgmail.util.MessagesUtil.SETTINGS_STATS;
 
 @Service
 @RequiredArgsConstructor
@@ -73,6 +73,7 @@ public class GmailBotService {
             case ERROR -> MessagesUtil.ERROR;
             default -> throw new IllegalStateException(UNEXPECTED_VALUE.formatted(currentCommand));
         };
+
         return this.createSendMessage(chatId, responseMessage, null);
     }
 
@@ -81,6 +82,7 @@ public class GmailBotService {
         ReplyKeyboard keyboard = currentCommand.equals(CommandType.AUTHORIZE)
                 ? ButtonsUtil.getAuthorizeInlineKeyboard(gmailConnectionService.getAuthorizationUrl(chatId))
                 : ButtonsUtil.getInlineKeyboard(KeyboardType.GMAIL_MAIN);
+
         return this.createSendMessage(chatId, responseMessage, keyboard);
     }
 

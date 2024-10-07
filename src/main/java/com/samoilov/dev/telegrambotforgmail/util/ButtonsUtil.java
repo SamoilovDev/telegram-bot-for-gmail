@@ -1,4 +1,4 @@
-package com.samoilov.dev.telegrambotforgmail.api.service.util;
+package com.samoilov.dev.telegrambotforgmail.util;
 
 import com.samoilov.dev.telegrambotforgmail.store.enums.KeyboardType;
 import lombok.experimental.UtilityClass;
@@ -36,14 +36,12 @@ public class ButtonsUtil {
 
     public static InlineKeyboardMarkup getGmailStartKeyboard() {
         return InlineKeyboardMarkup.builder()
-                .keyboardRow(
-                        List.of(
-                                InlineKeyboardButton.builder()
-                                        .text("Click to work with Gmail")
-                                        .callbackData("/gmail")
-                                        .build()
-                        )
-                )
+                .keyboardRow(List.of(
+                        InlineKeyboardButton.builder()
+                                .text("Click to work with Gmail")
+                                .callbackData("/gmail")
+                                .build()
+                ))
                 .build();
     }
 
@@ -99,16 +97,12 @@ public class ButtonsUtil {
 
     public static InlineKeyboardMarkup getGmailSendMessageTemplateKeyboard() {
         return InlineKeyboardMarkup.builder()
-                .keyboardRow(
-                        List.of(
-                                InlineKeyboardButton.builder()
-                                        .text("Click to get template")
-                                        .switchInlineQueryCurrentChat(
-                                                "/send <Required: email:to> -> <Optional: subject> -> <Optional: body>"
-                                        )
-                                        .build()
-                        )
-                )
+                .keyboardRow(List.of(
+                        InlineKeyboardButton.builder()
+                                .text("Click to get template")
+                                .switchInlineQueryCurrentChat("/send <Required: email:to> -> <Optional: subject> -> <Optional: body>")
+                                .build()
+                ))
                 .build();
     }
 

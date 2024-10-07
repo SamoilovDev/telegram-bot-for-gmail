@@ -1,7 +1,7 @@
-package com.samoilov.dev.telegrambotforgmail.api.controller;
+package com.samoilov.dev.telegrambotforgmail.controller;
 
-import com.samoilov.dev.telegrambotforgmail.api.service.GmailBotService;
-import com.samoilov.dev.telegrambotforgmail.api.mapper.InformationMapper;
+import com.samoilov.dev.telegrambotforgmail.service.GmailBotService;
+import com.samoilov.dev.telegrambotforgmail.mapper.InformationMapper;
 import com.samoilov.dev.telegrambotforgmail.config.properties.TelegramProperties;
 import com.samoilov.dev.telegrambotforgmail.store.dto.UpdateInformationDto;
 import lombok.RequiredArgsConstructor;
@@ -18,30 +18,15 @@ import org.telegram.telegrambots.meta.exceptions.TelegramApiException;
 @RequiredArgsConstructor
 public class GmailBotController extends TelegramLongPollingBot {
 
-    private final InformationMapper informationMapper;
-
     private final TelegramProperties telegramProperties;
-
+    private final InformationMapper informationMapper;
     private final GmailBotService gmailBotService;
-
-    @EventListener(SendMessage.class)
-    public void sendMessage(SendMessage responseMessage) {
-        try {
-            super.executeAsync(responseMessage);
-            log.info(
-                    "Message \"{}\" was send to chat with id {}",
-                    responseMessage.getText(),
-                    responseMessage.getChatId()
-            );
-        } catch (TelegramApiException e) {
-            log.warn(e.getMessage());
-        }
-    }
 
     @Override
     public void onUpdateReceived(Update update) {
         UpdateInformationDto preparedUpdate = informationMapper.mapFullUpdateToInformationDto(update);
         SendMessage responseMessage = gmailBotService.getResponseMessage(preparedUpdate);
+
         this.sendMessage(responseMessage);
     }
 
@@ -54,6 +39,16 @@ public class GmailBotController extends TelegramLongPollingBot {
     @SuppressWarnings("deprecation")
     public String getBotToken() {
         return telegramProperties.getToken();
+    }
+
+    @EventListener(SendMessage.class)
+    public void sendMessage(SendMessage responseMessage) {
+        try {
+            super.executeAsync(responseMessage);
+            log.info("Message \"{}\" was send to chat with id {}", responseMessage.getText(), responseMessage.getChatId());
+        } catch (TelegramApiException e) {
+            log.warn(e.getMessage());
+        }
     }
 
 }

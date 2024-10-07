@@ -36,10 +36,10 @@ import java.util.List;
 @Builder(toBuilder = true)
 @IdClass(TelegramId.class)
 @SQLDelete(
-        sql = "UPDATE user_table SET active_type = 'DISABLED' WHERE telegram_id = ?",
+        sql = "UPDATE users SET active_type = 'DISABLED' WHERE telegram_id = ?",
         check = ResultCheckStyle.COUNT
 )
-@Table(name = "user_table", uniqueConstraints = {
+@Table(name = "users", uniqueConstraints = {
         @UniqueConstraint(columnNames = "user_name", name = "user_table_unique_user_name_idx")
 })
 public class UserEntity {

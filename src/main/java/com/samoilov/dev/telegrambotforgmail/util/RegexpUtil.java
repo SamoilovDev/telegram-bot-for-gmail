@@ -1,4 +1,4 @@
-package com.samoilov.dev.telegrambotforgmail.api.service.util;
+package com.samoilov.dev.telegrambotforgmail.util;
 
 import lombok.experimental.UtilityClass;
 

@@ -1,7 +1,6 @@
 package com.samoilov.dev.telegrambotforgmail.config.properties;
 
 import lombok.Data;
-import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.context.properties.ConfigurationProperties;
 import org.springframework.context.annotation.PropertySource;
 
@@ -10,13 +9,14 @@ import org.springframework.context.annotation.PropertySource;
 @PropertySource(value = "classpath:application.properties")
 public class GoogleProperties {
 
-    @Value("${google.gmail.application-name}")
+    private String tokensDirectoryPath;
+
     private String applicationName;
 
-    @Value("${google.gmail.tokens-directory-path}")
-    private String tokensPath;
-
-    @Value("${google.gmail.credentials-path}")
     private String credentialsPath;
+
+    private String redirectUri;
+
+    private String oauthUrl;
 
 }

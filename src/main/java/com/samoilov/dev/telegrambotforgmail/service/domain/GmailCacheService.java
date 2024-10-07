@@ -1,11 +1,11 @@
-package com.samoilov.dev.telegrambotforgmail.api.service.domain;
+package com.samoilov.dev.telegrambotforgmail.service.domain;
 
 import com.google.api.client.auth.oauth2.Credential;
 import com.google.api.services.gmail.Gmail;
 import com.samoilov.dev.telegrambotforgmail.store.dto.AuthenticationInfoDto;
-import com.samoilov.dev.telegrambotforgmail.api.exception.GmailException;
-import com.samoilov.dev.telegrambotforgmail.api.service.util.ButtonsUtil;
-import com.samoilov.dev.telegrambotforgmail.api.service.util.MessagesUtil;
+import com.samoilov.dev.telegrambotforgmail.exception.GmailException;
+import com.samoilov.dev.telegrambotforgmail.util.ButtonsUtil;
+import com.samoilov.dev.telegrambotforgmail.util.MessagesUtil;
 import lombok.RequiredArgsConstructor;
 import org.springframework.cache.CacheManager;
 import org.springframework.cache.annotation.Cacheable;
@@ -21,20 +21,17 @@ import java.util.Optional;
 @RequiredArgsConstructor
 public class GmailCacheService {
 
+    private final GmailConnectionService gmailConnectionService;
+    private final ApplicationEventPublisher eventPublisher;
     private final CacheManager cacheManager;
 
-    private final ApplicationEventPublisher eventPublisher;
-
-    private final GmailConnectionService gmailConnectionService;
-
     @EventListener(AuthenticationInfoDto.class)
-    public void handleAndSaveAuthInfoDto(AuthenticationInfoDto authenticationInfoDto) {
+    public void handleAuthenticationInfo(AuthenticationInfoDto authenticationInfoDto) {
         Objects.requireNonNull(cacheManager.getCache("authenticationInfo"))
                 .put(authenticationInfoDto.getChatId(), authenticationInfoDto);
 
         eventPublisher.publishEvent(
-                SendMessage
-                        .builder()
+                SendMessage.builder()
                         .chatId(authenticationInfoDto.getChatId())
                         .text(MessagesUtil.SUCCESS_AUTHORIZATION)
                         .replyMarkup(ButtonsUtil.getGmailStartKeyboard())

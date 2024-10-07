@@ -1,10 +1,10 @@
-package com.samoilov.dev.telegrambotforgmail.api.service.checker;
+package com.samoilov.dev.telegrambotforgmail.service.checker;
 
 import com.google.api.services.gmail.Gmail;
-import com.samoilov.dev.telegrambotforgmail.api.service.domain.GmailService;
-import com.samoilov.dev.telegrambotforgmail.api.service.domain.UserService;
-import com.samoilov.dev.telegrambotforgmail.api.service.util.QueriesUtil;
-import com.samoilov.dev.telegrambotforgmail.api.service.util.RegexpUtil;
+import com.samoilov.dev.telegrambotforgmail.service.domain.GmailService;
+import com.samoilov.dev.telegrambotforgmail.service.domain.UserService;
+import com.samoilov.dev.telegrambotforgmail.util.QueriesUtil;
+import com.samoilov.dev.telegrambotforgmail.util.RegexpUtil;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.cache.Cache;
@@ -30,23 +30,18 @@ import static org.apache.logging.log4j.util.Strings.EMPTY;
 @RequiredArgsConstructor
 public class NewEmailsCheckerService {
 
-    private final UserService userService;
-
-    private final GmailService gmailService;
-
-    private final CacheManager cacheManager;
-
     private final ApplicationEventPublisher eventPublisher;
+    private final CacheManager cacheManager;
+    private final GmailService gmailService;
+    private final UserService userService;
 
     @Scheduled(fixedRate = 60000)
     private void checkNewEmails() {
         Cache cache = Objects.requireNonNull(cacheManager.getCache("gmail"));
 
         userService.getAllChatIds()
-                .forEach(chatId -> Optional
-                        .ofNullable(cache.get(chatId, Gmail.class))
-                        .ifPresent(gmail -> this.publishNewUnreadMessage(chatId, gmail))
-                );
+                .forEach(chatId -> Optional.ofNullable(cache.get(chatId, Gmail.class))
+                        .ifPresent(gmail -> this.publishNewUnreadMessage(chatId, gmail)));
     }
 
     private void publishNewUnreadMessage(Long chatId, Gmail gmail) {

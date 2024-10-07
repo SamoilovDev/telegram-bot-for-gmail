@@ -1,4 +1,4 @@
-package com.samoilov.dev.telegrambotforgmail.api.controller;
+package com.samoilov.dev.telegrambotforgmail.controller;
 
 import com.samoilov.dev.telegrambotforgmail.store.dto.AuthenticationInfoDto;
 import jakarta.servlet.http.HttpServletRequest;

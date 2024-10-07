@@ -1,4 +1,4 @@
-package com.samoilov.dev.telegrambotforgmail.api.service.util;
+package com.samoilov.dev.telegrambotforgmail.util;
 
 import lombok.experimental.UtilityClass;
 
@@ -26,7 +26,7 @@ public class MessagesUtil {
             """;
 
     public static final String AUTHORIZATION_FAILED = """
-            Sorry, internal error during authorization, please try to authorize me again or try again later.
+            Your session is expired! Please, authorize me again to work with gmail
             """;
 
     public static final String SETTINGS = """
@@ -79,5 +79,8 @@ public class MessagesUtil {
     public static final String ERROR = """
             Sorry, I don't understand you.
             """;
+
+
+    public static final String IMPOSSIBLE_TO_AUTHORIZE_NOW = "Impossible to authorize now, please try again later";
 
 }

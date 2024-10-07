@@ -18,5 +18,4 @@ public class UpdateInformationDto {
 
     private User telegramUser;
 
-
 }

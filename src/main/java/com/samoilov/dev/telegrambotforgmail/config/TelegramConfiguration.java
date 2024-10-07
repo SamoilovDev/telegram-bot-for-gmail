@@ -1,7 +1,7 @@
 package com.samoilov.dev.telegrambotforgmail.config;
 
-import com.samoilov.dev.telegrambotforgmail.api.controller.GmailBotController;
-import lombok.AllArgsConstructor;
+import com.samoilov.dev.telegrambotforgmail.controller.GmailBotController;
+import lombok.RequiredArgsConstructor;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.context.event.ContextRefreshedEvent;
 import org.springframework.context.event.EventListener;
@@ -10,7 +10,7 @@ import org.telegram.telegrambots.meta.exceptions.TelegramApiException;
 import org.telegram.telegrambots.updatesreceivers.DefaultBotSession;
 
 @Configuration
-@AllArgsConstructor
+@RequiredArgsConstructor
 public class TelegramConfiguration {
 
     private final GmailBotController gmailBotController;

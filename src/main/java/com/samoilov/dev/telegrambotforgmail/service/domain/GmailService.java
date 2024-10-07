@@ -1,8 +1,8 @@
-package com.samoilov.dev.telegrambotforgmail.api.service.domain;
+package com.samoilov.dev.telegrambotforgmail.service.domain;
 
 import com.google.api.services.gmail.Gmail;
 import com.google.api.services.gmail.model.Message;
-import com.samoilov.dev.telegrambotforgmail.api.exception.GmailException;
+import com.samoilov.dev.telegrambotforgmail.exception.GmailException;
 import lombok.RequiredArgsConstructor;
 import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.stereotype.Service;

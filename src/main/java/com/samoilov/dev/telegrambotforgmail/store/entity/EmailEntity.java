@@ -22,11 +22,11 @@ import lombok.Setter;
 @NoArgsConstructor
 @AllArgsConstructor
 @Builder(toBuilder = true)
-@Table(name = "email_table")
+@Table(name = "emails")
 public class EmailEntity {
 
     @Id
-    @Column(name = "id")
+    @Column(name = "email_id")
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 

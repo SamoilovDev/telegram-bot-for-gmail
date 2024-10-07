@@ -1,4 +1,4 @@
-package com.samoilov.dev.telegrambotforgmail.api.exception;
+package com.samoilov.dev.telegrambotforgmail.exception;
 
 public class AuthorizationUrlCreatingException extends RuntimeException {
 

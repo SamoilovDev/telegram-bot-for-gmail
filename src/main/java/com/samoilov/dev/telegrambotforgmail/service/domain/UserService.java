@@ -1,7 +1,7 @@
-package com.samoilov.dev.telegrambotforgmail.api.service.domain;
+package com.samoilov.dev.telegrambotforgmail.service.domain;
 
-import com.samoilov.dev.telegrambotforgmail.api.exception.UserNotFoundException;
-import com.samoilov.dev.telegrambotforgmail.api.mapper.InformationMapper;
+import com.samoilov.dev.telegrambotforgmail.exception.UserNotFoundException;
+import com.samoilov.dev.telegrambotforgmail.mapper.InformationMapper;
 import com.samoilov.dev.telegrambotforgmail.store.dto.UserDto;
 import com.samoilov.dev.telegrambotforgmail.store.entity.EmailEntity;
 import com.samoilov.dev.telegrambotforgmail.store.entity.UserEntity;

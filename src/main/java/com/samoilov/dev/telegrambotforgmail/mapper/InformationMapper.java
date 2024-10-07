@@ -1,4 +1,4 @@
-package com.samoilov.dev.telegrambotforgmail.api.mapper;
+package com.samoilov.dev.telegrambotforgmail.mapper;
 
 import com.samoilov.dev.telegrambotforgmail.store.dto.EmailMessageDto;
 import com.samoilov.dev.telegrambotforgmail.store.dto.UpdateInformationDto;
