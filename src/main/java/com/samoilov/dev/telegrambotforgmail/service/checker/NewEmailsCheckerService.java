@@ -4,7 +4,7 @@ import com.google.api.services.gmail.Gmail;
 import com.samoilov.dev.telegrambotforgmail.service.domain.GmailService;
 import com.samoilov.dev.telegrambotforgmail.service.domain.UserService;
 import com.samoilov.dev.telegrambotforgmail.util.QueriesUtil;
-import com.samoilov.dev.telegrambotforgmail.util.RegexpUtil;
+import com.samoilov.dev.telegrambotforgmail.util.PatternsUtil;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.cache.Cache;
@@ -49,14 +49,14 @@ public class NewEmailsCheckerService {
                 .filter(unreadMessages -> !unreadMessages.isEmpty())
                 .map(unreadMessages -> unreadMessages.get(0))
                 .orElse(EMPTY);
-        Matcher matcher = Pattern.compile(RegexpUtil.EMAIL_DATE_REGEXP)
+        Matcher matcher = Pattern.compile(PatternsUtil.EMAIL_DATE_REGEXP)
                 .matcher(lastUnreadMessage);
 
         if (matcher.find()) {
-            String[] foundedSplitDate = matcher.group().split(RegexpUtil.WHITESPACES);
+            String[] foundedSplitDate = matcher.group().split(PatternsUtil.WHITESPACES);
             LocalTime sendingTime = LocalTime.parse(
                     foundedSplitDate[foundedSplitDate.length - 1],
-                    DateTimeFormatter.ofPattern(RegexpUtil.TIME)
+                    DateTimeFormatter.ofPattern(PatternsUtil.TIME)
             );
 
             if (sendingTime.isAfter(LocalTime.now().minusMinutes(2L))) {

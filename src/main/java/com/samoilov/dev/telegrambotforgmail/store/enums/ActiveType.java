@@ -4,6 +4,6 @@ public enum ActiveType {
 
     ENABLED,
 
-    DISABLED
+    DISABLED;
 
 }

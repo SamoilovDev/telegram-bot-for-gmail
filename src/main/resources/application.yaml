@@ -1,0 +1,42 @@
+# Gmail Configuration
+google:
+  gmail:
+    application-name: Telegram Bot For Gmail Web Client
+    tokens-directory-path: tokens
+    credentials-path: /credentials/google_credentials.json
+    oauth-url: https://oauth2.googleapis.com/token
+    redirect-uri: http://localhost:8080/oauth2callback/
+
+# Telegram Bot Configuration
+telegram:
+  bot:
+    name: GmailCheckerBot
+    token: 6088214680:AAHA8ojUBxW02pICMsgYEDnoKbCQmWlJYIg
+
+spring:
+  # Database Configuration
+  datasource:
+    driver-class-name: com.mysql.cj.jdbc.Driver
+    url: jdbc:mysql://localhost:3306/telegram-bot-for-gmail-db?currentSchema=public
+    username: root
+    password: qq11qq22qq33
+    hikari:
+      connection-timeout: 20000
+      maximum-pool-size: 100
+  # SQL Initialization
+  sql:
+    init:
+      continue-on-error: true
+  # Redis Configuration
+  data:
+    redis:
+      host: localhost
+      port: 6379
+  # Hibernate Configuration
+  jpa:
+    hibernate:
+      ddl-auto: update
+    show-sql: false
+    database-platform: org.hibernate.dialect.MySQLDialect
+    properties:
+      hibernate.temp.use_jdbc_metadata_defaults: false

@@ -19,24 +19,21 @@ import javax.mail.internet.MimeMessage;
 import java.util.*;
 import java.util.function.Function;
 
-import static com.samoilov.dev.telegrambotforgmail.util.RegexpUtil.EMAIL_REGEXP;
-import static com.samoilov.dev.telegrambotforgmail.util.RegexpUtil.HTML_TAG_REGEXP;
-import static com.samoilov.dev.telegrambotforgmail.util.RegexpUtil.HTML_WHITESPACES_REGEXP;
-import static com.samoilov.dev.telegrambotforgmail.util.RegexpUtil.LINK_REGEXP;
-import static com.samoilov.dev.telegrambotforgmail.util.RegexpUtil.NEW_LINE;
-import static com.samoilov.dev.telegrambotforgmail.util.RegexpUtil.NEXT_MAIL_POINT_REGEXP;
-import static com.samoilov.dev.telegrambotforgmail.util.RegexpUtil.NOTHING;
-import static com.samoilov.dev.telegrambotforgmail.util.RegexpUtil.PREPARED_LINK;
-import static com.samoilov.dev.telegrambotforgmail.util.RegexpUtil.REDUNDANT_SPACES_REGEXP;
+import static com.samoilov.dev.telegrambotforgmail.util.PatternsUtil.EMAIL_REGEXP;
+import static com.samoilov.dev.telegrambotforgmail.util.PatternsUtil.HTML_TAG_REGEXP;
+import static com.samoilov.dev.telegrambotforgmail.util.PatternsUtil.HTML_WHITESPACES_REGEXP;
+import static com.samoilov.dev.telegrambotforgmail.util.PatternsUtil.LINK_REGEXP;
+import static com.samoilov.dev.telegrambotforgmail.util.PatternsUtil.NEW_LINE;
+import static com.samoilov.dev.telegrambotforgmail.util.PatternsUtil.NEXT_MAIL_POINT_REGEXP;
+import static com.samoilov.dev.telegrambotforgmail.util.PatternsUtil.NOTHING;
+import static com.samoilov.dev.telegrambotforgmail.util.PatternsUtil.PREPARED_LINK;
+import static com.samoilov.dev.telegrambotforgmail.util.PatternsUtil.REDUNDANT_SPACES_REGEXP;
 import static java.nio.charset.StandardCharsets.UTF_8;
 import static org.apache.logging.log4j.util.Strings.EMPTY;
 
 @Service
 @RequiredArgsConstructor
 public class EmailProcessingService {
-
-    private final ApplicationEventPublisher eventPublisher;
-    private final InformationMapper informationMapper;
 
     private static final List<String> REQUIRED_HEADER_NAMES = List.of(
             "From",
@@ -46,6 +43,8 @@ public class EmailProcessingService {
             "Subject"
     );
 
+    private final ApplicationEventPublisher eventPublisher;
+    private final InformationMapper informationMapper;
 
     public String prepareMessagePart(MessagePart messagePart) {
         StringBuilder preparedMessage = this.createPreparedHeadersPart(messagePart.getHeaders());

@@ -6,12 +6,21 @@ import com.fasterxml.jackson.core.json.JsonReadFeature;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.SerializationFeature;
 import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
+import com.samoilov.dev.telegrambotforgmail.config.properties.GoogleProperties;
+import com.samoilov.dev.telegrambotforgmail.config.properties.TelegramBotProperties;
+import org.springframework.boot.context.properties.EnableConfigurationProperties;
+import org.springframework.cache.annotation.EnableCaching;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.context.annotation.Primary;
 import org.springframework.http.converter.json.Jackson2ObjectMapperBuilder;
 
 @Configuration
+@EnableCaching
+@EnableConfigurationProperties({
+        TelegramBotProperties.class,
+        GoogleProperties.class
+})
 public class ApplicationConfiguration {
 
     @Bean

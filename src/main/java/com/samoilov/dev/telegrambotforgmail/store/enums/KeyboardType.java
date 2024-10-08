@@ -6,6 +6,6 @@ public enum KeyboardType {
 
     GMAIL_GET,
 
-    SETTINGS
+    SETTINGS;
 
 }

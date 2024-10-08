@@ -1,12 +1,12 @@
 package com.samoilov.dev.telegrambotforgmail.config.properties;
 
-import lombok.Data;
+import lombok.Getter;
+import lombok.Setter;
 import org.springframework.boot.context.properties.ConfigurationProperties;
-import org.springframework.context.annotation.PropertySource;
 
-@Data
+@Getter
+@Setter
 @ConfigurationProperties(prefix = "google.gmail")
-@PropertySource(value = "classpath:application.properties")
 public class GoogleProperties {
 
     private String tokensDirectoryPath;

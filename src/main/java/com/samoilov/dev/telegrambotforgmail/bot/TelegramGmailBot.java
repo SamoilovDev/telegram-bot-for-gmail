@@ -1,24 +1,24 @@
-package com.samoilov.dev.telegrambotforgmail.controller;
+package com.samoilov.dev.telegrambotforgmail.bot;
 
-import com.samoilov.dev.telegrambotforgmail.service.GmailBotService;
+import com.samoilov.dev.telegrambotforgmail.config.properties.TelegramBotProperties;
 import com.samoilov.dev.telegrambotforgmail.mapper.InformationMapper;
-import com.samoilov.dev.telegrambotforgmail.config.properties.TelegramProperties;
+import com.samoilov.dev.telegrambotforgmail.service.GmailBotService;
 import com.samoilov.dev.telegrambotforgmail.store.dto.UpdateInformationDto;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.context.event.EventListener;
-import org.springframework.stereotype.Controller;
+import org.springframework.stereotype.Component;
 import org.telegram.telegrambots.bots.TelegramLongPollingBot;
 import org.telegram.telegrambots.meta.api.methods.send.SendMessage;
 import org.telegram.telegrambots.meta.api.objects.Update;
 import org.telegram.telegrambots.meta.exceptions.TelegramApiException;
 
 @Slf4j
-@Controller
+@Component
 @RequiredArgsConstructor
-public class GmailBotController extends TelegramLongPollingBot {
+public class TelegramGmailBot extends TelegramLongPollingBot {
 
-    private final TelegramProperties telegramProperties;
+    private final TelegramBotProperties telegramBotProperties;
     private final InformationMapper informationMapper;
     private final GmailBotService gmailBotService;
 
@@ -32,13 +32,13 @@ public class GmailBotController extends TelegramLongPollingBot {
 
     @Override
     public String getBotUsername() {
-        return telegramProperties.getName();
+        return telegramBotProperties.getName();
     }
 
     @Override
     @SuppressWarnings("deprecation")
     public String getBotToken() {
-        return telegramProperties.getToken();
+        return telegramBotProperties.getToken();
     }
 
     @EventListener(SendMessage.class)
