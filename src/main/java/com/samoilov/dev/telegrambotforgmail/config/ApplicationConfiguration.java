@@ -14,9 +14,11 @@ import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.context.annotation.Primary;
 import org.springframework.http.converter.json.Jackson2ObjectMapperBuilder;
+import org.springframework.scheduling.annotation.EnableScheduling;
 
 @Configuration
 @EnableCaching
+@EnableScheduling
 @EnableConfigurationProperties({
         TelegramBotProperties.class,
         GoogleProperties.class
@@ -26,8 +28,7 @@ public class ApplicationConfiguration {
     @Bean
     @Primary
     public ObjectMapper objectMapper(Jackson2ObjectMapperBuilder objectMapperBuilder) {
-        return objectMapperBuilder
-                .createXmlMapper(Boolean.FALSE)
+        return objectMapperBuilder.createXmlMapper(Boolean.FALSE)
                 .build()
                 .configure(JsonReadFeature.ALLOW_UNESCAPED_CONTROL_CHARS.mappedFeature(), Boolean.TRUE)
                 .configure(JsonParser.Feature.ALLOW_SINGLE_QUOTES, Boolean.TRUE)

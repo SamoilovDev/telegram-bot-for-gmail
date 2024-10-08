@@ -1,11 +1,12 @@
-package com.samoilov.dev.telegrambotforgmail.service.domain;
+package com.samoilov.dev.telegrambotforgmail.service.impl;
 
 import com.google.api.services.gmail.model.MessagePart;
 import com.google.api.services.gmail.model.MessagePartBody;
 import com.google.api.services.gmail.model.MessagePartHeader;
-import com.samoilov.dev.telegrambotforgmail.mapper.InformationMapper;
-import com.samoilov.dev.telegrambotforgmail.store.dto.EmailMessageDto;
 import com.samoilov.dev.telegrambotforgmail.exception.GmailException;
+import com.samoilov.dev.telegrambotforgmail.mapper.InformationMapper;
+import com.samoilov.dev.telegrambotforgmail.service.EmailProcessingService;
+import com.samoilov.dev.telegrambotforgmail.store.dto.EmailMessageDto;
 import com.samoilov.dev.telegrambotforgmail.util.ButtonsUtil;
 import com.samoilov.dev.telegrambotforgmail.util.MessagesUtil;
 import lombok.RequiredArgsConstructor;
@@ -16,24 +17,19 @@ import org.telegram.telegrambots.meta.api.methods.ParseMode;
 import org.telegram.telegrambots.meta.api.methods.send.SendMessage;
 
 import javax.mail.internet.MimeMessage;
-import java.util.*;
+import java.util.Base64;
+import java.util.List;
+import java.util.Objects;
+import java.util.Optional;
 import java.util.function.Function;
 
-import static com.samoilov.dev.telegrambotforgmail.util.PatternsUtil.EMAIL_REGEXP;
-import static com.samoilov.dev.telegrambotforgmail.util.PatternsUtil.HTML_TAG_REGEXP;
-import static com.samoilov.dev.telegrambotforgmail.util.PatternsUtil.HTML_WHITESPACES_REGEXP;
-import static com.samoilov.dev.telegrambotforgmail.util.PatternsUtil.LINK_REGEXP;
-import static com.samoilov.dev.telegrambotforgmail.util.PatternsUtil.NEW_LINE;
-import static com.samoilov.dev.telegrambotforgmail.util.PatternsUtil.NEXT_MAIL_POINT_REGEXP;
-import static com.samoilov.dev.telegrambotforgmail.util.PatternsUtil.NOTHING;
-import static com.samoilov.dev.telegrambotforgmail.util.PatternsUtil.PREPARED_LINK;
-import static com.samoilov.dev.telegrambotforgmail.util.PatternsUtil.REDUNDANT_SPACES_REGEXP;
+import static com.samoilov.dev.telegrambotforgmail.util.PatternsUtil.*;
 import static java.nio.charset.StandardCharsets.UTF_8;
 import static org.apache.logging.log4j.util.Strings.EMPTY;
 
 @Service
 @RequiredArgsConstructor
-public class EmailProcessingService {
+public class EmailProcessingServiceImpl implements EmailProcessingService {
 
     private static final List<String> REQUIRED_HEADER_NAMES = List.of(
             "From",
@@ -46,6 +42,7 @@ public class EmailProcessingService {
     private final ApplicationEventPublisher eventPublisher;
     private final InformationMapper informationMapper;
 
+    @Override
     public String prepareMessagePart(MessagePart messagePart) {
         StringBuilder preparedMessage = this.createPreparedHeadersPart(messagePart.getHeaders());
         String mimeType = messagePart.getMimeType();
@@ -64,6 +61,7 @@ public class EmailProcessingService {
                 .orElse(EMPTY);
     }
 
+    @Override
     public MimeMessage prepareRawMessageToMime(String rawMessage, String fromEmail, Long chatId) {
         String[] splitRawMessage = rawMessage.split(NEXT_MAIL_POINT_REGEXP, 3);
         Function<String, String> checkByEmptyFunc = rawPart -> Optional.of(rawPart)

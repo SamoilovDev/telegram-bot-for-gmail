@@ -1,18 +1,16 @@
-package com.samoilov.dev.telegrambotforgmail.service.checker;
+package com.samoilov.dev.telegrambotforgmail.scheduler;
 
 import com.google.api.services.gmail.Gmail;
-import com.samoilov.dev.telegrambotforgmail.service.domain.GmailService;
-import com.samoilov.dev.telegrambotforgmail.service.domain.UserService;
-import com.samoilov.dev.telegrambotforgmail.util.QueriesUtil;
+import com.samoilov.dev.telegrambotforgmail.service.impl.GmailServiceImpl;
+import com.samoilov.dev.telegrambotforgmail.service.impl.UserServiceImpl;
 import com.samoilov.dev.telegrambotforgmail.util.PatternsUtil;
+import com.samoilov.dev.telegrambotforgmail.util.QueriesUtil;
 import lombok.RequiredArgsConstructor;
-import lombok.extern.slf4j.Slf4j;
 import org.springframework.cache.Cache;
 import org.springframework.cache.CacheManager;
 import org.springframework.context.ApplicationEventPublisher;
-import org.springframework.scheduling.annotation.EnableScheduling;
 import org.springframework.scheduling.annotation.Scheduled;
-import org.springframework.stereotype.Service;
+import org.springframework.stereotype.Component;
 import org.telegram.telegrambots.meta.api.methods.send.SendMessage;
 
 import java.time.LocalTime;
@@ -24,18 +22,16 @@ import java.util.regex.Pattern;
 
 import static org.apache.logging.log4j.util.Strings.EMPTY;
 
-@Slf4j
-@Service
-@EnableScheduling
+@Component
 @RequiredArgsConstructor
-public class NewEmailsCheckerService {
+public class GmailNotificationScheduler {
 
     private final ApplicationEventPublisher eventPublisher;
     private final CacheManager cacheManager;
-    private final GmailService gmailService;
-    private final UserService userService;
+    private final GmailServiceImpl gmailService;
+    private final UserServiceImpl userService;
 
-    @Scheduled(fixedRate = 60000)
+    @Scheduled(cron = "0 */5 * * * *")
     private void checkNewEmails() {
         Cache cache = Objects.requireNonNull(cacheManager.getCache("gmail"));
 
@@ -64,5 +60,4 @@ public class NewEmailsCheckerService {
             }
         }
     }
-
 }

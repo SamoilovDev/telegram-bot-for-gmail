@@ -1,27 +1,26 @@
-package com.samoilov.dev.telegrambotforgmail.service.domain;
+package com.samoilov.dev.telegrambotforgmail.service.impl;
 
 import com.samoilov.dev.telegrambotforgmail.exception.UserNotFoundException;
 import com.samoilov.dev.telegrambotforgmail.mapper.InformationMapper;
+import com.samoilov.dev.telegrambotforgmail.service.UserService;
 import com.samoilov.dev.telegrambotforgmail.store.dto.UserDto;
 import com.samoilov.dev.telegrambotforgmail.store.entity.EmailEntity;
 import com.samoilov.dev.telegrambotforgmail.store.entity.UserEntity;
 import com.samoilov.dev.telegrambotforgmail.store.repository.UserRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
-import org.springframework.transaction.annotation.Transactional;
 import org.telegram.telegrambots.meta.api.objects.User;
 
 import java.util.List;
 
 @Service
 @RequiredArgsConstructor
-public class UserService {
+public class UserServiceImpl implements UserService {
 
     private final InformationMapper informationMapper;
-
     private final UserRepository userRepository;
 
-    @Transactional
+    @Override
     public UserDto saveUser(User user) {
         if (userRepository.existsByTelegramId(user.getId())) {
             UserEntity foundedUser = this.getUserEntityByTelegramId(user.getId());
@@ -34,7 +33,7 @@ public class UserService {
         return this.saveChangedUserData(user);
     }
 
-    @Transactional
+    @Override
     public void addEmailAddress(Long telegramId, String email) {
         UserEntity foundedUser = this.getUserEntityByTelegramId(telegramId);
         List<EmailEntity> emails = foundedUser.getEmails();
@@ -44,7 +43,7 @@ public class UserService {
         userRepository.save(foundedUser);
     }
 
-    @Transactional
+    @Override
     public void addChatId(Long telegramId, Long chatId) {
         UserEntity foundedUser = this.getUserEntityByTelegramId(telegramId);
 
@@ -52,16 +51,17 @@ public class UserService {
         userRepository.save(foundedUser);
     }
 
-    @Transactional
+    @Override
     public void incrementCommandCounter(Long telegramId) {
         userRepository.incrementCount(telegramId);
     }
 
-    @Transactional
+    @Override
     public void disableUser(Long telegramId) {
         userRepository.disableUser(telegramId);
     }
 
+    @Override
     public List<Long> getAllChatIds() {
         return userRepository
                 .findAll()

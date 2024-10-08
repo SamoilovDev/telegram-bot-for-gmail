@@ -1,7 +1,11 @@
-package com.samoilov.dev.telegrambotforgmail.service.domain;
+package com.samoilov.dev.telegrambotforgmail.service.impl;
 
 import com.google.api.client.auth.oauth2.Credential;
-import com.google.api.client.googleapis.auth.oauth2.*;
+import com.google.api.client.googleapis.auth.oauth2.GoogleAuthorizationCodeFlow;
+import com.google.api.client.googleapis.auth.oauth2.GoogleAuthorizationCodeTokenRequest;
+import com.google.api.client.googleapis.auth.oauth2.GoogleClientSecrets;
+import com.google.api.client.googleapis.auth.oauth2.GoogleCredential;
+import com.google.api.client.googleapis.auth.oauth2.GoogleTokenResponse;
 import com.google.api.client.http.javanet.NetHttpTransport;
 import com.google.api.client.json.JsonFactory;
 import com.google.api.client.util.store.FileDataStoreFactory;
@@ -9,12 +13,12 @@ import com.google.api.services.gmail.Gmail;
 import com.samoilov.dev.telegrambotforgmail.config.properties.GoogleProperties;
 import com.samoilov.dev.telegrambotforgmail.exception.AuthorizationUrlCreatingException;
 import com.samoilov.dev.telegrambotforgmail.exception.GmailException;
+import com.samoilov.dev.telegrambotforgmail.service.GmailConnectionService;
 import com.samoilov.dev.telegrambotforgmail.util.ButtonsUtil;
 import com.samoilov.dev.telegrambotforgmail.util.MessagesUtil;
 import jakarta.annotation.PostConstruct;
 import jakarta.annotation.PreDestroy;
 import lombok.RequiredArgsConstructor;
-import lombok.extern.slf4j.Slf4j;
 import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.stereotype.Service;
 import org.telegram.telegrambots.meta.api.methods.send.SendMessage;
@@ -26,10 +30,9 @@ import java.util.List;
 
 import static com.samoilov.dev.telegrambotforgmail.util.MessagesUtil.IMPOSSIBLE_TO_AUTHORIZE_NOW;
 
-@Slf4j
 @Service
 @RequiredArgsConstructor
-public class GmailConnectionService {
+public class GmailConnectionServiceImpl implements GmailConnectionService {
 
     private final ApplicationEventPublisher eventPublisher;
     private final GoogleClientSecrets googleClientSecrets;
@@ -40,20 +43,7 @@ public class GmailConnectionService {
 
     private File tokenStore;
 
-    @PostConstruct
-    public void createTokenStore() throws IOException {
-        tokenStore = new File(googleProperties.getTokensDirectoryPath());
-
-        if (!tokenStore.exists()) {
-            Files.createDirectories(tokenStore.toPath());
-        }
-    }
-
-    @PreDestroy
-    private void deleteTokenStore() throws IOException {
-        Files.deleteIfExists(tokenStore.toPath());
-    }
-
+    @Override
     public String getAuthorizationUrl(Long chatId) {
         try {
             return new GoogleAuthorizationCodeFlow.Builder(netHttpTransport, jsonFactory, googleClientSecrets, scopes)
@@ -69,7 +59,7 @@ public class GmailConnectionService {
         }
     }
 
-
+    @Override
     @SuppressWarnings("deprecation")
     public Credential exchangeCode(String authCode, String redirectUri, Long chatId) {
         try {
@@ -97,12 +87,14 @@ public class GmailConnectionService {
         }
     }
 
+    @Override
     public Gmail createGmailService(Credential credential) {
         return new Gmail.Builder(netHttpTransport, jsonFactory, credential)
                 .setApplicationName(googleProperties.getApplicationName())
                 .build();
     }
 
+    @Override
     public void sendErrorResponse(Long chatId) {
         eventPublisher.publishEvent(
                 SendMessage.builder()
@@ -111,6 +103,20 @@ public class GmailConnectionService {
                         .replyMarkup(ButtonsUtil.getAuthorizeInlineKeyboard(this.getAuthorizationUrl(chatId)))
                         .build()
         );
+    }
+
+    @PostConstruct
+    private void createTokenStore() throws IOException {
+        tokenStore = new File(googleProperties.getTokensDirectoryPath());
+
+        if (!tokenStore.exists()) {
+            Files.createDirectories(tokenStore.toPath());
+        }
+    }
+
+    @PreDestroy
+    private void deleteTokenStore() throws IOException {
+        Files.deleteIfExists(tokenStore.toPath());
     }
 
 }

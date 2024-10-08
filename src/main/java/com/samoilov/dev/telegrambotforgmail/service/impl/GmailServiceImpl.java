@@ -1,8 +1,10 @@
-package com.samoilov.dev.telegrambotforgmail.service.domain;
+package com.samoilov.dev.telegrambotforgmail.service.impl;
 
 import com.google.api.services.gmail.Gmail;
 import com.google.api.services.gmail.model.Message;
 import com.samoilov.dev.telegrambotforgmail.exception.GmailException;
+import com.samoilov.dev.telegrambotforgmail.service.EmailProcessingService;
+import com.samoilov.dev.telegrambotforgmail.service.GmailService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.stereotype.Service;
@@ -18,16 +20,15 @@ import java.util.Objects;
 
 @Service
 @RequiredArgsConstructor
-public class GmailService {
+public class GmailServiceImpl implements GmailService {
 
     private final EmailProcessingService emailProcessingService;
-
     private final ApplicationEventPublisher eventPublisher;
 
     private static final String GMAIL_USER_ID = "me";
-
     private static final String FORMAT = "full";
 
+    @Override
     public List<String> getMessagesByQuery(Gmail userGmail, String query, Long chatId) {
         return this.getMessageListByQ(userGmail, query, chatId)
                 .stream()
@@ -37,6 +38,7 @@ public class GmailService {
                 .toList();
     }
 
+    @Override
     public String getEmailAddress(Gmail gmail) {
         try {
             return gmail.users()
@@ -48,6 +50,7 @@ public class GmailService {
         }
     }
 
+    @Override
     public void sendEmail(Long chatId, String emailSample, Gmail userGmail) {
         String fromEmail = this.getEmailAddress(userGmail);
         MimeMessage mimeMessage = emailProcessingService.prepareRawMessageToMime(emailSample, fromEmail, chatId);
