@@ -2,6 +2,7 @@ package com.samoilov.dev.telegrambotforgmail.store.entity;
 
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
+import jakarta.persistence.FetchType;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
@@ -34,7 +35,7 @@ public class EmailEntity {
     @Column(name = "gmail_address", length = 50)
     private String email;
 
-    @ManyToOne
+    @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumns({
             @JoinColumn(name = "user_telegram_id", referencedColumnName = "telegram_id"),
             @JoinColumn(name = "user_first_name", referencedColumnName = "first_name")

@@ -4,6 +4,8 @@ import com.google.api.services.gmail.Gmail;
 import com.samoilov.dev.telegrambotforgmail.service.GmailBotService;
 import com.samoilov.dev.telegrambotforgmail.service.GmailCacheService;
 import com.samoilov.dev.telegrambotforgmail.service.GmailConnectionService;
+import com.samoilov.dev.telegrambotforgmail.service.GmailService;
+import com.samoilov.dev.telegrambotforgmail.service.UserService;
 import com.samoilov.dev.telegrambotforgmail.store.dto.UpdateInformationDto;
 import com.samoilov.dev.telegrambotforgmail.store.dto.UserDto;
 import com.samoilov.dev.telegrambotforgmail.store.enums.CommandType;
@@ -26,18 +28,14 @@ import static com.samoilov.dev.telegrambotforgmail.util.MessagesUtil.*;
 @RequiredArgsConstructor
 public class GmailBotServiceImpl implements GmailBotService {
 
-    private final UserServiceImpl userService;
-
-    private final GmailServiceImpl gmailService;
-
-    private final GmailCacheService gmailCacheService;
-
     private final GmailConnectionService gmailConnectionService;
-
     private final ApplicationEventPublisher eventPublisher;
+    private final GmailCacheService gmailCacheService;
+    private final GmailService gmailService;
+    private final UserService userService;
 
-    private static final String UNEXPECTED_VALUE = "Unexpected value: %s";
     private static final String ABSENT_INFORMATION = "information is absent";
+    private static final String UNEXPECTED_VALUE = "Unexpected value: %s";
 
     @Override
     public SendMessage getResponseMessage(UpdateInformationDto preparedUpdate) {

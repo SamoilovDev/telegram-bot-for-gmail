@@ -7,6 +7,7 @@ import org.telegram.telegrambots.meta.api.objects.User;
 import java.util.List;
 
 public interface UserService {
+
     @Transactional
     UserDto saveUser(User user);
 
@@ -23,4 +24,5 @@ public interface UserService {
     void disableUser(Long telegramId);
 
     List<Long> getAllChatIds();
+
 }

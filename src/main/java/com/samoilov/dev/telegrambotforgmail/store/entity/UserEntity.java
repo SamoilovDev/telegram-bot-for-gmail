@@ -76,7 +76,7 @@ public class UserEntity {
     private Long commandCounter = 0L;
 
     @Builder.Default
-    @OneToMany(mappedBy = "user", cascade = CascadeType.ALL, fetch = FetchType.EAGER)
+    @OneToMany(mappedBy = "user", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
     private List<EmailEntity> emails = new ArrayList<>();
 
     @Builder.Default
