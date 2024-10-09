@@ -39,6 +39,10 @@ public class EmailProcessingServiceImpl implements EmailProcessingService {
             "Subject"
     );
 
+    private static final String MULTIPART_ALTERNATIVE_MIME_TYPE = "multipart/alternative";
+    private static final String EMAIL_BODY_DELIMITER = "\n\nMessage:\n";
+    private static final String EMAIL_DATE = "Date";
+
     private final ApplicationEventPublisher eventPublisher;
     private final InformationMapper informationMapper;
 
@@ -47,7 +51,7 @@ public class EmailProcessingServiceImpl implements EmailProcessingService {
         StringBuilder preparedMessage = this.createPreparedHeadersPart(messagePart.getHeaders());
         String mimeType = messagePart.getMimeType();
 
-        if (Objects.isNull(mimeType) || !mimeType.equals("multipart/alternative")) {
+        if (Objects.isNull(mimeType) || !mimeType.equals(MULTIPART_ALTERNATIVE_MIME_TYPE)) {
             return EMPTY;
         }
 
@@ -69,15 +73,12 @@ public class EmailProcessingServiceImpl implements EmailProcessingService {
                 .orElse(null);
 
         if (splitRawMessage.length < 3 || !splitRawMessage[0].matches(EMAIL_REGEXP)) {
-            eventPublisher.publishEvent(
-                    SendMessage.builder()
-                            .chatId(chatId)
-                            .text(MessagesUtil.SEND_ERROR)
-                            .replyMarkup(ButtonsUtil.getGmailSendMessageTemplateKeyboard())
-                            .parseMode(ParseMode.MARKDOWN)
-                            .build()
-            );
-
+            eventPublisher.publishEvent(SendMessage.builder()
+                    .chatId(chatId)
+                    .text(MessagesUtil.SEND_ERROR)
+                    .replyMarkup(ButtonsUtil.getGmailSendMessageTemplateKeyboard())
+                    .parseMode(ParseMode.MARKDOWN)
+                    .build());
             throw new GmailException();
         }
 
@@ -98,12 +99,11 @@ public class EmailProcessingServiceImpl implements EmailProcessingService {
                 .filter(header -> REQUIRED_HEADER_NAMES.contains(header.getName()))
                 .forEachOrdered(header -> {
                     String headerName = header.getName();
-                    String value = headerName.equals("Date")
+                    String value = headerName.equals(EMAIL_DATE)
                             ? header.getValue().replaceAll("\\+\\d+", EMPTY)
                             : header.getValue();
 
-                    preparedMessage
-                            .append(NEW_LINE)
+                    preparedMessage.append(NEW_LINE)
                             .append(headerName)
                             .append(": ")
                             .append(value);
@@ -130,8 +130,7 @@ public class EmailProcessingServiceImpl implements EmailProcessingService {
                 .replaceAll(HTML_WHITESPACES_REGEXP, NEW_LINE)
                 .replaceAll(REDUNDANT_SPACES_REGEXP, NEW_LINE);
 
-        return preparedHeaders
-                .append("\n\nMessage:\n")
+        return preparedHeaders.append(EMAIL_BODY_DELIMITER)
                 .append(abbreviatedMessage)
                 .toString();
     }

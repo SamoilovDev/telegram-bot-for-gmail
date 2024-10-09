@@ -13,12 +13,14 @@ import com.google.api.services.gmail.Gmail;
 import com.samoilov.dev.telegrambotforgmail.config.properties.GoogleProperties;
 import com.samoilov.dev.telegrambotforgmail.exception.AuthorizationUrlCreatingException;
 import com.samoilov.dev.telegrambotforgmail.exception.GmailException;
-import com.samoilov.dev.telegrambotforgmail.service.GmailConnectionService;
+import com.samoilov.dev.telegrambotforgmail.service.GmailAuthorizationService;
+import com.samoilov.dev.telegrambotforgmail.store.dto.AuthenticationInfoDto;
 import com.samoilov.dev.telegrambotforgmail.util.ButtonsUtil;
 import com.samoilov.dev.telegrambotforgmail.util.MessagesUtil;
 import jakarta.annotation.PostConstruct;
 import jakarta.annotation.PreDestroy;
 import lombok.RequiredArgsConstructor;
+import org.springframework.cache.CacheManager;
 import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.stereotype.Service;
 import org.telegram.telegrambots.meta.api.methods.send.SendMessage;
@@ -26,29 +28,47 @@ import org.telegram.telegrambots.meta.api.methods.send.SendMessage;
 import java.io.File;
 import java.io.IOException;
 import java.nio.file.Files;
-import java.util.List;
+import java.util.Objects;
 
+import static com.samoilov.dev.telegrambotforgmail.config.CacheConfiguration.AUTHENTICATION_INFO_CACHE_NAME;
 import static com.samoilov.dev.telegrambotforgmail.util.MessagesUtil.IMPOSSIBLE_TO_AUTHORIZE_NOW;
 
 @Service
 @RequiredArgsConstructor
-public class GmailConnectionServiceImpl implements GmailConnectionService {
+public class GmailAuthorizationServiceImpl implements GmailAuthorizationService {
 
+    private static final String GOOGLE_ACCESS_TYPE = "offline";
+    
     private final ApplicationEventPublisher eventPublisher;
     private final GoogleClientSecrets googleClientSecrets;
     private final GoogleProperties googleProperties;
     private final NetHttpTransport netHttpTransport;
+    private final CacheManager cacheManager;
     private final JsonFactory jsonFactory;
-    private final List<String> scopes;
 
     private File tokenStore;
 
     @Override
+    public void handleAuthenticationInfo(AuthenticationInfoDto authenticationInfoDto) {
+        Objects.requireNonNull(cacheManager.getCache(AUTHENTICATION_INFO_CACHE_NAME))
+                .put(authenticationInfoDto.getChatId(), authenticationInfoDto);
+
+        eventPublisher.publishEvent(
+                SendMessage.builder()
+                        .chatId(authenticationInfoDto.getChatId())
+                        .text(MessagesUtil.SUCCESS_AUTHORIZATION)
+                        .replyMarkup(ButtonsUtil.getGmailStartKeyboard())
+                        .build()
+        );
+    }
+
+    @Override
     public String getAuthorizationUrl(Long chatId) {
         try {
-            return new GoogleAuthorizationCodeFlow.Builder(netHttpTransport, jsonFactory, googleClientSecrets, scopes)
+            return new GoogleAuthorizationCodeFlow
+                    .Builder(netHttpTransport, jsonFactory, googleClientSecrets, googleProperties.getScopes())
                     .setDataStoreFactory(new FileDataStoreFactory(tokenStore))
-                    .setAccessType("offline")
+                    .setAccessType(GOOGLE_ACCESS_TYPE)
                     .build()
                     .newAuthorizationUrl()
                     .setRedirectUri(googleProperties.getRedirectUri().concat(String.valueOf(chatId)))
@@ -61,7 +81,7 @@ public class GmailConnectionServiceImpl implements GmailConnectionService {
 
     @Override
     @SuppressWarnings("deprecation")
-    public Credential exchangeCode(String authCode, String redirectUri, Long chatId) {
+    public Credential exchangeAuthorizationCode(String authCode, String redirectUri, Long chatId) {
         try {
             GoogleClientSecrets.Details details = googleClientSecrets.getDetails();
             GoogleTokenResponse response = new GoogleAuthorizationCodeTokenRequest(
@@ -82,20 +102,20 @@ public class GmailConnectionServiceImpl implements GmailConnectionService {
                     .setAccessToken(response.getAccessToken())
                     .setRefreshToken(response.getRefreshToken());
         } catch (IOException e) {
-            this.sendErrorResponse(chatId);
+            this.sendAuthorizationFailedMessage(chatId);
             throw new GmailException(e);
         }
     }
 
     @Override
-    public Gmail createGmailService(Credential credential) {
+    public Gmail authorizeGmail(Credential credential) {
         return new Gmail.Builder(netHttpTransport, jsonFactory, credential)
                 .setApplicationName(googleProperties.getApplicationName())
                 .build();
     }
 
     @Override
-    public void sendErrorResponse(Long chatId) {
+    public void sendAuthorizationFailedMessage(Long chatId) {
         eventPublisher.publishEvent(
                 SendMessage.builder()
                         .chatId(chatId)
@@ -107,7 +127,7 @@ public class GmailConnectionServiceImpl implements GmailConnectionService {
 
     @PostConstruct
     private void createTokenStore() throws IOException {
-        tokenStore = new File(googleProperties.getTokensDirectoryPath());
+        tokenStore = new File(googleProperties.getTokensPath());
 
         if (!tokenStore.exists()) {
             Files.createDirectories(tokenStore.toPath());

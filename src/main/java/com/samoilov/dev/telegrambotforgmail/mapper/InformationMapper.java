@@ -54,8 +54,7 @@ public interface InformationMapper {
 
     @Named("mapEmailEntitiesToStringList")
     default List<String> mapEmailEntitiesToStringList(List<EmailEntity> emailEntities) {
-        return emailEntities
-                .stream()
+        return emailEntities.stream()
                 .map(EmailEntity::getEmail)
                 .toList();
     }

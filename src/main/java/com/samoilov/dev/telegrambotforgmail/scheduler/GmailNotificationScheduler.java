@@ -20,6 +20,7 @@ import java.util.Optional;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
+import static com.samoilov.dev.telegrambotforgmail.config.CacheConfiguration.GMAIL_CACHE_NAME;
 import static org.apache.logging.log4j.util.Strings.EMPTY;
 
 @Component
@@ -33,7 +34,7 @@ public class GmailNotificationScheduler {
 
     @Scheduled(cron = "0 */5 * * * *")
     private void checkNewEmails() {
-        Cache cache = Objects.requireNonNull(cacheManager.getCache("gmail"));
+        Cache cache = Objects.requireNonNull(cacheManager.getCache(GMAIL_CACHE_NAME));
 
         userService.getAllChatIds()
                 .forEach(chatId -> Optional.ofNullable(cache.get(chatId, Gmail.class))

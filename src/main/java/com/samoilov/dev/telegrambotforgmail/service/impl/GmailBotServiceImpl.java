@@ -3,7 +3,7 @@ package com.samoilov.dev.telegrambotforgmail.service.impl;
 import com.google.api.services.gmail.Gmail;
 import com.samoilov.dev.telegrambotforgmail.service.GmailBotService;
 import com.samoilov.dev.telegrambotforgmail.service.GmailCacheService;
-import com.samoilov.dev.telegrambotforgmail.service.GmailConnectionService;
+import com.samoilov.dev.telegrambotforgmail.service.GmailAuthorizationService;
 import com.samoilov.dev.telegrambotforgmail.service.GmailService;
 import com.samoilov.dev.telegrambotforgmail.service.UserService;
 import com.samoilov.dev.telegrambotforgmail.store.dto.UpdateInformationDto;
@@ -28,7 +28,7 @@ import static com.samoilov.dev.telegrambotforgmail.util.MessagesUtil.*;
 @RequiredArgsConstructor
 public class GmailBotServiceImpl implements GmailBotService {
 
-    private final GmailConnectionService gmailConnectionService;
+    private final GmailAuthorizationService gmailAuthorizationService;
     private final ApplicationEventPublisher eventPublisher;
     private final GmailCacheService gmailCacheService;
     private final GmailService gmailService;
@@ -70,7 +70,7 @@ public class GmailBotServiceImpl implements GmailBotService {
     private SendMessage getMessageWithButtons(CommandType currentCommand, Long chatId) {
         String responseMessage = currentCommand.equals(CommandType.AUTHORIZE) ? AUTHORIZE : GMAIL;
         ReplyKeyboard keyboard = currentCommand.equals(CommandType.AUTHORIZE)
-                ? ButtonsUtil.getAuthorizeInlineKeyboard(gmailConnectionService.getAuthorizationUrl(chatId))
+                ? ButtonsUtil.getAuthorizeInlineKeyboard(gmailAuthorizationService.getAuthorizationUrl(chatId))
                 : ButtonsUtil.getInlineKeyboard(KeyboardType.GMAIL_MAIN);
 
         return this.createSendMessage(chatId, responseMessage, keyboard);

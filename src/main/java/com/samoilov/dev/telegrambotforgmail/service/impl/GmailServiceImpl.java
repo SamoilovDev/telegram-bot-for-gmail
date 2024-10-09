@@ -25,6 +25,7 @@ public class GmailServiceImpl implements GmailService {
     private final EmailProcessingService emailProcessingService;
     private final ApplicationEventPublisher eventPublisher;
 
+    private static final String EMAIL_SEND_ERROR_MESSAGE = "Error during sending message, please try again later";
     private static final String GMAIL_USER_ID = "me";
     private static final String FORMAT = "full";
 
@@ -69,9 +70,7 @@ public class GmailServiceImpl implements GmailService {
 
             this.getMessagesFromGmail(gmail).send(GMAIL_USER_ID, preparedMessage).execute();
         } catch (IOException | MessagingException e) {
-            eventPublisher.publishEvent(new SendMessage(
-                    String.valueOf(chatId), "Error during sending message, please try again later."
-            ));
+            eventPublisher.publishEvent(new SendMessage(String.valueOf(chatId), EMAIL_SEND_ERROR_MESSAGE));
             throw new GmailException(e);
         }
     }
@@ -84,9 +83,7 @@ public class GmailServiceImpl implements GmailService {
                     .execute()
                     .getMessages();
         } catch (IOException e) {
-            eventPublisher.publishEvent(new SendMessage(
-                    String.valueOf(chatId), "Error during getting messages, please try again later"
-            ));
+            eventPublisher.publishEvent(new SendMessage(String.valueOf(chatId), EMAIL_SEND_ERROR_MESSAGE));
             throw new GmailException(e);
         }
     }
@@ -98,9 +95,7 @@ public class GmailServiceImpl implements GmailService {
                     .setFormat(FORMAT)
                     .execute();
         } catch (IOException e) {
-            eventPublisher.publishEvent(new SendMessage(
-                    String.valueOf(chatId), "Error during getting messages, please try again later"
-            ));
+            eventPublisher.publishEvent(new SendMessage(String.valueOf(chatId), EMAIL_SEND_ERROR_MESSAGE));
             throw new GmailException(e);
         }
     }

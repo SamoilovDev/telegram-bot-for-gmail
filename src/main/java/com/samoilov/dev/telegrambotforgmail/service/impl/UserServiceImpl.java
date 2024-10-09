@@ -63,8 +63,7 @@ public class UserServiceImpl implements UserService {
 
     @Override
     public List<Long> getAllChatIds() {
-        return userRepository
-                .findAll()
+        return userRepository.findAll()
                 .stream()
                 .map(UserEntity::getChatIds)
                 .flatMap(List::stream)
@@ -79,8 +78,7 @@ public class UserServiceImpl implements UserService {
     }
 
     private UserEntity getUserEntityByTelegramId(Long telegramId) {
-        return userRepository
-                .findByTelegramId(telegramId)
+        return userRepository.findByTelegramId(telegramId)
                 .orElseThrow(UserNotFoundException::new);
     }
 

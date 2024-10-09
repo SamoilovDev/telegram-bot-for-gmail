@@ -4,7 +4,7 @@ services:
   db:
     image: mysql:latest
     environment:
-      MYSQL_ROOT_PASSWORD: qq11qq22qq33
+      MYSQL_ROOT_PASSWORD: pass
       MYSQL_DATABASE: telegram-bot-for-gmail-db
     ports:
       - "3306:3306"

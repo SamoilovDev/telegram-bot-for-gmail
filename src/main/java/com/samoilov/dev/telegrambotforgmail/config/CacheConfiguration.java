@@ -1,11 +1,11 @@
 package com.samoilov.dev.telegrambotforgmail.config;
 
 import com.github.benmanes.caffeine.cache.Caffeine;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.cache.CacheManager;
 import org.springframework.cache.caffeine.CaffeineCacheManager;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
-import org.springframework.context.annotation.Primary;
 
 import java.util.List;
 import java.util.concurrent.TimeUnit;
@@ -13,25 +13,23 @@ import java.util.concurrent.TimeUnit;
 @Configuration
 public class CacheConfiguration {
 
-    private static final List<String> CACHE_NAMES = List.of(
-            "gmail",
-            "authenticationInfo"
-    );
+    public static final String AUTHENTICATION_INFO_CACHE_NAME = "authenticationInfo";
+    public static final String CACHE_MANAGER_BEAN_NAME = "cacheManager";
+    public static final String GMAIL_CACHE_NAME = "gmail";
 
     @Bean
-    public Caffeine<Object, Object> caffeineConfig() {
-        return Caffeine.newBuilder()
-                .expireAfterWrite(60, TimeUnit.MINUTES)
-                .initialCapacity(100)
-                .maximumSize(500);
-    }
-
-    @Bean
-    @Primary
-    public CacheManager cacheManager(Caffeine<Object, Object> caffeine) {
+    public CacheManager cacheManager(
+            @Value("${spring.cache.expiration}") Integer expiration,
+            @Value("${spring.cache.initial-capacity}") Integer initialCapacity,
+            @Value("${spring.cache.maximum-size}") Integer maximumSize) {
         CaffeineCacheManager caffeineCacheManager = new CaffeineCacheManager();
-        caffeineCacheManager.setCaffeine(caffeine);
-        caffeineCacheManager.setCacheNames(CACHE_NAMES);
+
+        caffeineCacheManager.setCaffeine(Caffeine.newBuilder()
+                .expireAfterWrite(expiration, TimeUnit.MINUTES)
+                .initialCapacity(initialCapacity)
+                .maximumSize(maximumSize));
+        caffeineCacheManager.setCacheNames(List.of(GMAIL_CACHE_NAME, AUTHENTICATION_INFO_CACHE_NAME));
+
         return caffeineCacheManager;
     }
 

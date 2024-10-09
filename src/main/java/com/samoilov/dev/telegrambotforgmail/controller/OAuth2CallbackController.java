@@ -18,7 +18,7 @@ public class OAuth2CallbackController implements OAuth2CallbackApi {
 
     private final ApplicationEventPublisher eventPublisher;
 
-    public static final String REDIRECT_URL = "https://t.me/GmailCheckerBot";
+    private static final String REDIRECT_URL = "https://t.me/GmailCheckerBot";
 
     @Override
     public void handleOAuth2Callback(
