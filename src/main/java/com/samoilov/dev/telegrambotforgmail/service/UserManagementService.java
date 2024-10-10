@@ -12,7 +12,7 @@ public interface UserManagementService {
     UserDto saveUser(User user);
 
     @Transactional
-    void addEmailAddress(Long telegramId, String email);
+    void addEmailAddressIfNeeded(Long telegramId, String email);
 
     @Transactional
     void addChatId(Long telegramId, Long chatId);

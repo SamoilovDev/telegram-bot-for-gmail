@@ -35,7 +35,7 @@ public class OAuth2CallbackController implements OAuth2CallbackApi {
 
             response.sendRedirect(REDIRECT_URL);
         } catch (IOException e) {
-            log.error("Error while handling OAuth2 callback", e);
+            log.error("Error during OAuth2 callback handling", e);
         }
     }
 

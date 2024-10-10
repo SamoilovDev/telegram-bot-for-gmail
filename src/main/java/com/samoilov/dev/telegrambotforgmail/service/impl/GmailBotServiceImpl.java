@@ -1,9 +1,9 @@
 package com.samoilov.dev.telegrambotforgmail.service.impl;
 
 import com.google.api.services.gmail.Gmail;
+import com.samoilov.dev.telegrambotforgmail.service.GmailAuthorizationService;
 import com.samoilov.dev.telegrambotforgmail.service.GmailBotService;
 import com.samoilov.dev.telegrambotforgmail.service.GmailCacheService;
-import com.samoilov.dev.telegrambotforgmail.service.GmailAuthorizationService;
 import com.samoilov.dev.telegrambotforgmail.service.GmailService;
 import com.samoilov.dev.telegrambotforgmail.service.UserManagementService;
 import com.samoilov.dev.telegrambotforgmail.store.dto.UpdateInformationDto;
@@ -100,37 +100,33 @@ public class GmailBotServiceImpl implements GmailBotService {
     private SendMessage getGmailProcessingMessage(Long chatId, Long telegramId, String message) {
         Gmail gmail = gmailCacheService.getGmail(chatId);
         String[] splitMessage = message.split("\\s+", 2);
-        boolean isSendProcess = splitMessage[0].equals(CommandType.SEND.getCommand());
+        boolean sendingProcess = splitMessage[0].equals(CommandType.SEND.getCommand());
+
+        userManagementService.addEmailAddressIfNeeded(telegramId, gmailService.getEmailAddress(gmail));
 
         if (splitMessage.length == 1) {
-            return this.createSendMessage(
-                    chatId,
-                    isSendProcess ? SEND : GET,
-                    isSendProcess
-                            ? ButtonsUtil.getGmailSendMessageTemplateKeyboard()
-                            : ButtonsUtil.getGmailMessageReceiveKeyboard()
-            );
+            ReplyKeyboard keyboard = sendingProcess
+                    ? ButtonsUtil.getGmailSendMessageTemplateKeyboard()
+                    : ButtonsUtil.getGmailMessageReceiveKeyboard();
+
+            return this.createSendMessage(chatId, sendingProcess ? SEND : GET, keyboard);
         }
 
-        userManagementService.addEmailAddress(telegramId, gmailService.getEmailAddress(gmail));
+        ReplyKeyboard keyboard = sendingProcess
+                ? ButtonsUtil.getGmailStartKeyboard()
+                : ButtonsUtil.getGmailMessageReceiveKeyboard();
 
-        if (isSendProcess) {
+        if (sendingProcess) {
             gmailService.sendEmail(chatId, splitMessage[1], gmail);
-        } else {
-            gmailService
-                    .getMessagesByQuery(gmail, splitMessage[1], chatId)
-                    .forEach(receivedEmail -> eventPublisher.publishEvent(
-                            this.createSendMessage(chatId, receivedEmail, null)
-                    ));
+            return this.createSendMessage(chatId, SEND_FINISH, keyboard);
         }
 
-        return this.createSendMessage(
-                chatId,
-                isSendProcess ? SEND_FINISH : GET_FINISH,
-                isSendProcess
-                        ? ButtonsUtil.getGmailStartKeyboard()
-                        : ButtonsUtil.getGmailMessageReceiveKeyboard()
-        );
+        gmailService.getMessagesByQuery(gmail, splitMessage[1], chatId)
+                .forEach(receivedEmail -> eventPublisher.publishEvent(
+                        this.createSendMessage(chatId, receivedEmail, null)
+                ));
+
+        return this.createSendMessage(chatId, GET_FINISH, keyboard);
     }
 
     private String prepareStatsMessage(UserDto userDto) {
@@ -140,13 +136,10 @@ public class GmailBotServiceImpl implements GmailBotService {
         StringBuilder emails = new StringBuilder("[");
 
         if (Objects.isNull(userDto.getEmails()) || userDto.getEmails().isEmpty()) {
-            emails.delete(0, 1)
-                    .append(ABSENT_INFORMATION);
+            emails.delete(0, 1).append(ABSENT_INFORMATION);
         } else {
-            userDto.getEmails()
-                    .forEach(email -> emails.append(email).append(", "));
-            emails.delete(emails.length() - 2, emails.length())
-                    .append("]");
+            userDto.getEmails().forEach(email -> emails.append(email).append(", "));
+            emails.delete(emails.length() - 2, emails.length()).append("]");
         }
 
         return SETTINGS_STATS.formatted(
@@ -157,8 +150,7 @@ public class GmailBotServiceImpl implements GmailBotService {
                 firstCommandTime,
                 userDto.getCommandCounter(),
                 userDto.getActiveType(),
-                emails.toString()
-        );
+                emails.toString());
     }
 
     private SendMessage createSendMessage(@NotNull Long chatId, String message, ReplyKeyboard keyboard) {

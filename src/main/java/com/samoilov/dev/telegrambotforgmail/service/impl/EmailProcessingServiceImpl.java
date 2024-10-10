@@ -11,7 +11,6 @@ import com.samoilov.dev.telegrambotforgmail.util.ButtonsUtil;
 import com.samoilov.dev.telegrambotforgmail.util.MessagesUtil;
 import lombok.RequiredArgsConstructor;
 import org.springframework.context.ApplicationEventPublisher;
-import org.springframework.http.MediaType;
 import org.springframework.stereotype.Service;
 import org.telegram.telegrambots.meta.api.methods.ParseMode;
 import org.telegram.telegrambots.meta.api.methods.send.SendMessage;
@@ -26,6 +25,8 @@ import java.util.function.Function;
 import static com.samoilov.dev.telegrambotforgmail.util.PatternsUtil.*;
 import static java.nio.charset.StandardCharsets.UTF_8;
 import static org.apache.logging.log4j.util.Strings.EMPTY;
+import static org.springframework.http.MediaType.TEXT_HTML_VALUE;
+import static org.springframework.http.MediaType.TEXT_PLAIN_VALUE;
 
 @Service
 @RequiredArgsConstructor
@@ -82,14 +83,12 @@ public class EmailProcessingServiceImpl implements EmailProcessingService {
             throw new GmailException();
         }
 
-        return telegramInfoMapper.mapEmailMessageDtoToMime(
-                EmailMessageDto.builder()
-                        .from(fromEmail)
-                        .to(splitRawMessage[0])
-                        .subject(checkByEmptyFunc.apply(splitRawMessage[1]))
-                        .bodyText(checkByEmptyFunc.apply(splitRawMessage[2]))
-                        .build()
-        );
+        return telegramInfoMapper.mapEmailMessageDtoToMime(EmailMessageDto.builder()
+                .from(fromEmail)
+                .to(splitRawMessage[0])
+                .subject(checkByEmptyFunc.apply(splitRawMessage[1]))
+                .bodyText(checkByEmptyFunc.apply(splitRawMessage[2]))
+                .build());
     }
 
     private StringBuilder createPreparedHeadersPart(List<MessagePartHeader> headers) {
@@ -117,7 +116,7 @@ public class EmailProcessingServiceImpl implements EmailProcessingService {
         String mimeTypePart = messagePart.getMimeType();
 
         return Optional.ofNullable(body)
-                .map(b -> (mimeTypePart.equals(MediaType.TEXT_PLAIN_VALUE) || mimeTypePart.equals(MediaType.TEXT_HTML_VALUE))
+                .map(b -> (mimeTypePart.equals(TEXT_PLAIN_VALUE) || mimeTypePart.equals(TEXT_HTML_VALUE))
                         && !b.getData().isBlank())
                 .orElse(false);
     }

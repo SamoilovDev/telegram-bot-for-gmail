@@ -116,13 +116,11 @@ public class GmailAuthorizationServiceImpl implements GmailAuthorizationService 
 
     @Override
     public void sendAuthorizationFailedMessage(Long chatId) {
-        eventPublisher.publishEvent(
-                SendMessage.builder()
-                        .chatId(chatId)
-                        .text(MessagesUtil.AUTHORIZATION_FAILED)
-                        .replyMarkup(ButtonsUtil.getAuthorizeInlineKeyboard(this.getAuthorizationUrl(chatId)))
-                        .build()
-        );
+        eventPublisher.publishEvent(SendMessage.builder()
+                .chatId(chatId)
+                .text(MessagesUtil.AUTHORIZATION_FAILED)
+                .replyMarkup(ButtonsUtil.getAuthorizeInlineKeyboard(this.getAuthorizationUrl(chatId)))
+                .build());
     }
 
     @PostConstruct

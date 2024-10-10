@@ -21,8 +21,8 @@ public interface UserRepository extends JpaRepository<UserEntity, String> {
     @Query("UPDATE UserEntity u SET u.activeType = 'DISABLED' WHERE u.telegramId = :telegramId")
     void disableUser(@Param("telegramId") Long telegramId);
 
-    boolean existsByTelegramId(Long telegramId);
-
     Optional<UserEntity> findByTelegramId(Long telegramId);
+
+    boolean existsByTelegramId(Long telegramId);
 
 }

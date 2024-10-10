@@ -6,6 +6,7 @@ import com.samoilov.dev.telegrambotforgmail.service.UserManagementService;
 import com.samoilov.dev.telegrambotforgmail.store.dto.UserDto;
 import com.samoilov.dev.telegrambotforgmail.store.entity.GmailEntity;
 import com.samoilov.dev.telegrambotforgmail.store.entity.UserEntity;
+import com.samoilov.dev.telegrambotforgmail.store.repository.GmailRepository;
 import com.samoilov.dev.telegrambotforgmail.store.repository.UserRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
@@ -18,6 +19,7 @@ import java.util.Optional;
 @RequiredArgsConstructor
 public class UserManagementServiceImpl implements UserManagementService {
 
+    private final GmailRepository gmailRepository;
     private final UserInfoMapper userInfoMapper;
     private final UserRepository userRepository;
 
@@ -38,13 +40,15 @@ public class UserManagementServiceImpl implements UserManagementService {
     }
 
     @Override
-    public void addEmailAddress(Long telegramId, String email) {
+    public void addEmailAddressIfNeeded(Long telegramId, String email) {
         UserEntity foundedUser = this.getUserEntityByTelegramId(telegramId);
-        List<GmailEntity> emails = foundedUser.getEmails();
 
-        emails.add(GmailEntity.builder().emailAddress(email).build());
-        foundedUser.setEmails(emails);
-        userRepository.save(foundedUser);
+        if (!gmailRepository.existsEmailAddressForCurrentUser(email, foundedUser)) {
+            gmailRepository.saveAndFlush(GmailEntity.builder()
+                    .emailAddress(email)
+                    .user(foundedUser)
+                    .build());
+        }
     }
 
     @Override
