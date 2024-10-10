@@ -43,7 +43,7 @@ public class UserManagementServiceImpl implements UserManagementService {
     public void addEmailAddressIfNeeded(Long telegramId, String email) {
         UserEntity foundedUser = this.getUserEntityByTelegramId(telegramId);
 
-        if (!gmailRepository.existsEmailAddressForCurrentUser(email, foundedUser)) {
+        if (!gmailRepository.existsByEmailAddress(email)) {
             gmailRepository.saveAndFlush(GmailEntity.builder()
                     .emailAddress(email)
                     .user(foundedUser)

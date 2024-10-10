@@ -23,6 +23,7 @@ public interface UserManagementService {
     @Transactional
     void disableUser(Long telegramId);
 
+    @Transactional
     List<Long> getAllChatIds();
 
 }
