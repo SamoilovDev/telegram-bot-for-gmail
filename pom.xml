@@ -23,6 +23,7 @@
         <telegram.version>6.7.0</telegram.version>
         <javax.mail.version>1.6.2</javax.mail.version>
         <mapstruct.version>1.5.5.Final</mapstruct.version>
+        <jackson.jaxb.version>2.18.0</jackson.jaxb.version>
         <google.api-client.version>2.0.0</google.api-client.version>
         <google.apis.version>v1-rev20220404-2.0.0</google.apis.version>
         <google.oauth-client.version>1.34.1</google.oauth-client.version>
@@ -99,9 +100,14 @@
         </dependency>
 
         <dependency>
-            <groupId>com.mysql</groupId>
-            <artifactId>mysql-connector-j</artifactId>
-            <scope>runtime</scope>
+            <groupId>org.postgresql</groupId>
+            <artifactId>postgresql</artifactId>
+        </dependency>
+
+        <dependency>
+            <groupId>com.fasterxml.jackson.module</groupId>
+            <artifactId>jackson-module-jaxb-annotations</artifactId>
+            <version>${jackson.jaxb.version}</version>
         </dependency>
 
         <dependency>

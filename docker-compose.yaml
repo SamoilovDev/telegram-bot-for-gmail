@@ -1,17 +1,17 @@
 version: '3.8'
-
 services:
   db:
-    image: mysql:latest
+    image: postgres:14.4
+    container_name: telegram-bot-for-gmail-db
     environment:
-      MYSQL_ROOT_PASSWORD: pass
-      MYSQL_DATABASE: telegram-bot-for-gmail-db
-    ports:
-      - "3306:3306"
+      - POSTGRES_USER=user
+      - POSTGRES_PASSWORD=pass
+      - POSTGRES_DB=telegram-bot-for-gmail-db
     volumes:
-      - mysql-data:/var/lib/mysql
-    command: '--default-authentication-plugin=mysql_native_password'
-    restart: always
-
+      - telegram-bot-for-gmail-db:/var/lib/postgresql/data
+    ports:
+      - "5432:5432"
+    restart: unless-stopped
 volumes:
-  mysql-data:
+  telegram-bot-for-gmail-db:
+    driver: local

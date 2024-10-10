@@ -14,7 +14,6 @@ import java.io.Serializable;
 public class TelegramId implements Serializable {
 
     private Long telegramId;
-
     private String firstName;
 
 }

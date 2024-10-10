@@ -5,7 +5,7 @@ import com.samoilov.dev.telegrambotforgmail.service.GmailBotService;
 import com.samoilov.dev.telegrambotforgmail.service.GmailCacheService;
 import com.samoilov.dev.telegrambotforgmail.service.GmailAuthorizationService;
 import com.samoilov.dev.telegrambotforgmail.service.GmailService;
-import com.samoilov.dev.telegrambotforgmail.service.UserService;
+import com.samoilov.dev.telegrambotforgmail.service.UserManagementService;
 import com.samoilov.dev.telegrambotforgmail.store.dto.UpdateInformationDto;
 import com.samoilov.dev.telegrambotforgmail.store.dto.UserDto;
 import com.samoilov.dev.telegrambotforgmail.store.enums.CommandType;
@@ -29,10 +29,10 @@ import static com.samoilov.dev.telegrambotforgmail.util.MessagesUtil.*;
 public class GmailBotServiceImpl implements GmailBotService {
 
     private final GmailAuthorizationService gmailAuthorizationService;
+    private final UserManagementService userManagementService;
     private final ApplicationEventPublisher eventPublisher;
     private final GmailCacheService gmailCacheService;
     private final GmailService gmailService;
-    private final UserService userService;
 
     private static final String ABSENT_INFORMATION = "information is absent";
     private static final String UNEXPECTED_VALUE = "Unexpected value: %s";
@@ -41,11 +41,11 @@ public class GmailBotServiceImpl implements GmailBotService {
     public SendMessage getResponseMessage(UpdateInformationDto preparedUpdate) {
         Long chatId = preparedUpdate.getChatId();
         String message = preparedUpdate.getMessage().replaceAll("@\\w+\\s", "");
-        UserDto savedUser = userService.saveUser(preparedUpdate.getTelegramUser());
+        UserDto savedUser = userManagementService.saveUser(preparedUpdate.getTelegramUser());
         CommandType currentCommand = CommandType.parseCommand(message.split("\\s+")[0]);
 
-        userService.incrementCommandCounter(savedUser.getTelegramId());
-        userService.addChatId(savedUser.getTelegramId(), chatId);
+        userManagementService.incrementCommandCounter(savedUser.getTelegramId());
+        userManagementService.addChatId(savedUser.getTelegramId(), chatId);
 
         return switch (currentCommand) {
             case START, INFO, ERROR -> this.getSimpleMessage(currentCommand, savedUser.getFirstName(), chatId);
@@ -87,7 +87,7 @@ public class GmailBotServiceImpl implements GmailBotService {
         String preparedMessage = switch (command) {
             case "stats" -> this.prepareStatsMessage(userDto);
             case "delete" -> {
-                userService.disableUser(userDto.getTelegramId());
+                userManagementService.disableUser(userDto.getTelegramId());
                 yield SETTINGS_DELETE.formatted(userDto.getFirstName());
             }
             default -> throw new IllegalStateException(UNEXPECTED_VALUE.formatted(command));
@@ -112,7 +112,7 @@ public class GmailBotServiceImpl implements GmailBotService {
             );
         }
 
-        userService.addEmailAddress(telegramId, gmailService.getEmailAddress(gmail));
+        userManagementService.addEmailAddress(telegramId, gmailService.getEmailAddress(gmail));
 
         if (isSendProcess) {
             gmailService.sendEmail(chatId, splitMessage[1], gmail);

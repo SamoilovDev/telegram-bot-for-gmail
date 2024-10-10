@@ -5,18 +5,17 @@ import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
+import java.io.Serializable;
+
 @Data
-@Builder
 @NoArgsConstructor
 @AllArgsConstructor
-public class EmailMessageDto {
-
-    private String from;
-
-    private String to;
-
-    private String subject;
+@Builder(toBuilder = true)
+public class EmailMessageDto implements Serializable {
 
     private String bodyText;
+    private String subject;
+    private String from;
+    private String to;
 
 }

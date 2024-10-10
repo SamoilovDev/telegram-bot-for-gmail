@@ -1,8 +1,8 @@
 package com.samoilov.dev.telegrambotforgmail.scheduler;
 
 import com.google.api.services.gmail.Gmail;
-import com.samoilov.dev.telegrambotforgmail.service.impl.GmailServiceImpl;
-import com.samoilov.dev.telegrambotforgmail.service.impl.UserServiceImpl;
+import com.samoilov.dev.telegrambotforgmail.service.GmailService;
+import com.samoilov.dev.telegrambotforgmail.service.UserManagementService;
 import com.samoilov.dev.telegrambotforgmail.util.PatternsUtil;
 import com.samoilov.dev.telegrambotforgmail.util.QueriesUtil;
 import lombok.RequiredArgsConstructor;
@@ -27,16 +27,16 @@ import static org.apache.logging.log4j.util.Strings.EMPTY;
 @RequiredArgsConstructor
 public class GmailNotificationScheduler {
 
+    private final UserManagementService userManagementService;
     private final ApplicationEventPublisher eventPublisher;
     private final CacheManager cacheManager;
-    private final GmailServiceImpl gmailService;
-    private final UserServiceImpl userService;
+    private final GmailService gmailService;
 
     @Scheduled(cron = "0 */5 * * * *")
     private void checkNewEmails() {
         Cache cache = Objects.requireNonNull(cacheManager.getCache(GMAIL_CACHE_NAME));
 
-        userService.getAllChatIds()
+        userManagementService.getAllChatIds()
                 .forEach(chatId -> Optional.ofNullable(cache.get(chatId, Gmail.class))
                         .ifPresent(gmail -> this.publishNewUnreadMessage(chatId, gmail)));
     }

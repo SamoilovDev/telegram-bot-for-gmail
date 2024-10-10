@@ -1,5 +1,6 @@
 package com.samoilov.dev.telegrambotforgmail.store.entity;
 
+import com.samoilov.dev.telegrambotforgmail.store.entity.base.BaseEntity;
 import com.samoilov.dev.telegrambotforgmail.store.entity.id.TelegramId;
 import com.samoilov.dev.telegrambotforgmail.store.enums.ActiveType;
 import jakarta.persistence.CascadeType;
@@ -11,6 +12,7 @@ import jakarta.persistence.Enumerated;
 import jakarta.persistence.FetchType;
 import jakarta.persistence.Id;
 import jakarta.persistence.IdClass;
+import jakarta.persistence.Index;
 import jakarta.persistence.OneToMany;
 import jakarta.persistence.Table;
 import jakarta.persistence.UniqueConstraint;
@@ -19,12 +21,10 @@ import lombok.Builder;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
-import org.hibernate.annotations.CreationTimestamp;
+import lombok.experimental.SuperBuilder;
 import org.hibernate.annotations.ResultCheckStyle;
 import org.hibernate.annotations.SQLDelete;
-import org.hibernate.annotations.UpdateTimestamp;
 
-import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -33,16 +33,21 @@ import java.util.List;
 @Entity
 @NoArgsConstructor
 @AllArgsConstructor
-@Builder(toBuilder = true)
 @IdClass(TelegramId.class)
+@SuperBuilder(toBuilder = true)
 @SQLDelete(
         sql = "UPDATE users SET active_type = 'DISABLED' WHERE telegram_id = ?",
         check = ResultCheckStyle.COUNT
 )
-@Table(name = "users", uniqueConstraints = {
-        @UniqueConstraint(columnNames = "user_name", name = "user_table_unique_user_name_idx")
-})
-public class UserEntity {
+@Table(name = "users",
+        indexes = {
+                @Index(columnList = "telegram_id", name = "users_telegram_id_idx"),
+                @Index(columnList = "username", name = "users_username_idx")
+        },
+        uniqueConstraints = {
+                @UniqueConstraint(columnNames = "username", name = "users_unique_username_idx")
+        })
+public class UserEntity extends BaseEntity {
 
     @Id
     @Column(name = "telegram_id", length = 50)
@@ -55,16 +60,8 @@ public class UserEntity {
     @Column(name = "last_name", length = 50)
     private String lastName;
 
-    @Column(name = "user_name", length = 50)
-    private String userName;
-
-    @CreationTimestamp
-    @Column(name = "registered_at")
-    private LocalDateTime createdAt;
-
-    @UpdateTimestamp
-    @Column(name = "updated_at")
-    private LocalDateTime updatedAt;
+    @Column(name = "username", length = 50)
+    private String username;
 
     @Builder.Default
     @Enumerated(EnumType.STRING)
@@ -76,11 +73,11 @@ public class UserEntity {
     private Long commandCounter = 0L;
 
     @Builder.Default
-    @OneToMany(mappedBy = "user", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
-    private List<EmailEntity> emails = new ArrayList<>();
+    @ElementCollection
+    private List<Long> chatIds = new ArrayList<>();
 
     @Builder.Default
-    @ElementCollection(fetch = FetchType.EAGER)
-    private List<Long> chatIds = new ArrayList<>();
+    @OneToMany(mappedBy = "user", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
+    private List<GmailEntity> emails = new ArrayList<>();
 
 }

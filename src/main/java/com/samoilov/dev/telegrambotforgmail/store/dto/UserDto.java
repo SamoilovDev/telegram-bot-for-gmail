@@ -15,20 +15,13 @@ import java.util.List;
 @Builder(toBuilder = true)
 public class UserDto {
 
-    private Long telegramId;
-
-    private String firstName;
-
-    private String lastName;
-
-    private String userName;
-
     private LocalDateTime createDate;
-
-    private Long commandCounter;
-
     private ActiveType activeType;
-
+    private Long commandCounter;
     private List<String> emails;
+    private String firstName;
+    private Long telegramId;
+    private String lastName;
+    private String userName;
 
 }

@@ -2,36 +2,21 @@ package com.samoilov.dev.telegrambotforgmail.mapper;
 
 import com.samoilov.dev.telegrambotforgmail.store.dto.EmailMessageDto;
 import com.samoilov.dev.telegrambotforgmail.store.dto.UpdateInformationDto;
-import com.samoilov.dev.telegrambotforgmail.store.dto.UserDto;
-import com.samoilov.dev.telegrambotforgmail.store.entity.EmailEntity;
-import com.samoilov.dev.telegrambotforgmail.store.entity.UserEntity;
 import org.mapstruct.Mapper;
 import org.mapstruct.Mapping;
 import org.mapstruct.Mappings;
-import org.mapstruct.Named;
 import org.telegram.telegrambots.meta.api.objects.CallbackQuery;
 import org.telegram.telegrambots.meta.api.objects.Message;
 import org.telegram.telegrambots.meta.api.objects.Update;
-import org.telegram.telegrambots.meta.api.objects.User;
 
 import javax.mail.MessagingException;
 import javax.mail.Session;
 import javax.mail.internet.InternetAddress;
 import javax.mail.internet.MimeMessage;
-import java.time.LocalDateTime;
-import java.util.List;
 import java.util.Properties;
 
-@Mapper(componentModel = "spring", imports = LocalDateTime.class)
-public interface InformationMapper {
-
-    @Mappings({
-            @Mapping(source = "id", target = "telegramId"),
-            @Mapping(source = "lastName", target = "lastName"),
-            @Mapping(source = "userName", target = "userName"),
-            @Mapping(target = "updatedAt", expression = "java(LocalDateTime.now())")
-    })
-    UserEntity mapTelegramUserToEntity(User user);
+@Mapper(componentModel = "spring")
+public interface TelegramInfoMapper {
 
     @Mappings({
             @Mapping(source = "text", target = "message"),
@@ -45,19 +30,6 @@ public interface InformationMapper {
             @Mapping(target = "telegramUser", source = "from")
     })
     UpdateInformationDto mapCallbackQueryToUpdateInformationDto(CallbackQuery callbackQuery);
-
-    @Mappings({
-            @Mapping(target = "createDate", source = "createdAt"),
-            @Mapping(target = "emails", qualifiedByName = "mapEmailEntitiesToStringList")
-    })
-    UserDto mapEntityToDto(UserEntity userEntity);
-
-    @Named("mapEmailEntitiesToStringList")
-    default List<String> mapEmailEntitiesToStringList(List<EmailEntity> emailEntities) {
-        return emailEntities.stream()
-                .map(EmailEntity::getEmail)
-                .toList();
-    }
 
     default MimeMessage mapEmailMessageDtoToMime(EmailMessageDto emailMessageDto) {
         try {

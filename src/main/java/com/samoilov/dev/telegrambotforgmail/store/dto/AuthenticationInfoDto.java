@@ -2,21 +2,19 @@ package com.samoilov.dev.telegrambotforgmail.store.dto;
 
 import lombok.AllArgsConstructor;
 import lombok.Builder;
-import lombok.Getter;
+import lombok.Data;
 import lombok.NoArgsConstructor;
-import lombok.Setter;
 
-@Getter
-@Setter
-@Builder
+import java.io.Serializable;
+
+@Data
 @NoArgsConstructor
 @AllArgsConstructor
-public class AuthenticationInfoDto {
-
-    private Long chatId;
-
-    private String authCode;
+@Builder(toBuilder = true)
+public class AuthenticationInfoDto implements Serializable {
 
     private String redirectUri;
+    private String authCode;
+    private Long chatId;
 
 }

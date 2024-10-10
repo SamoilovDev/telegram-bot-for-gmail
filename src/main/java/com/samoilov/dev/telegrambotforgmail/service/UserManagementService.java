@@ -6,7 +6,7 @@ import org.telegram.telegrambots.meta.api.objects.User;
 
 import java.util.List;
 
-public interface UserService {
+public interface UserManagementService {
 
     @Transactional
     UserDto saveUser(User user);

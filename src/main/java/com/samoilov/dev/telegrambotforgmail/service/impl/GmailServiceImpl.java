@@ -63,15 +63,17 @@ public class GmailServiceImpl implements GmailService {
         try (ByteArrayOutputStream buffer = new ByteArrayOutputStream()) {
             emailMessage.writeTo(buffer);
 
-            String encodedEmail = Base64.getUrlEncoder().encodeToString(buffer.toByteArray());
+            String encodedEmail = Base64.getUrlEncoder()
+                    .encodeToString(buffer.toByteArray());
             Message preparedMessage = new Message();
 
             preparedMessage.setRaw(encodedEmail);
 
-            this.getMessagesFromGmail(gmail).send(GMAIL_USER_ID, preparedMessage).execute();
+            this.getMessagesFromGmail(gmail)
+                    .send(GMAIL_USER_ID, preparedMessage)
+                    .execute();
         } catch (IOException | MessagingException e) {
-            eventPublisher.publishEvent(new SendMessage(String.valueOf(chatId), EMAIL_SEND_ERROR_MESSAGE));
-            throw new GmailException(e);
+            this.processEmailSendingError(chatId, e);
         }
     }
 
@@ -83,8 +85,7 @@ public class GmailServiceImpl implements GmailService {
                     .execute()
                     .getMessages();
         } catch (IOException e) {
-            eventPublisher.publishEvent(new SendMessage(String.valueOf(chatId), EMAIL_SEND_ERROR_MESSAGE));
-            throw new GmailException(e);
+            return this.processEmailSendingError(chatId, e);
         }
     }
 
@@ -95,13 +96,20 @@ public class GmailServiceImpl implements GmailService {
                     .setFormat(FORMAT)
                     .execute();
         } catch (IOException e) {
-            eventPublisher.publishEvent(new SendMessage(String.valueOf(chatId), EMAIL_SEND_ERROR_MESSAGE));
-            throw new GmailException(e);
+            return this.processEmailSendingError(chatId, e);
         }
     }
 
     private Gmail.Users.Messages getMessagesFromGmail(Gmail gmail) {
         return gmail.users().messages();
+    }
+
+    private <T, E extends Exception> T processEmailSendingError(Long chatId, E exception) {
+        eventPublisher.publishEvent(
+                new SendMessage(String.valueOf(chatId), EMAIL_SEND_ERROR_MESSAGE)
+        );
+
+        throw new GmailException(exception);
     }
 
 }

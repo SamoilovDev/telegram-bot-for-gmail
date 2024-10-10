@@ -6,16 +6,16 @@ import lombok.Data;
 import lombok.NoArgsConstructor;
 import org.telegram.telegrambots.meta.api.objects.User;
 
+import java.io.Serializable;
+
 @Data
-@Builder
 @NoArgsConstructor
 @AllArgsConstructor
-public class UpdateInformationDto {
-
-    private String message;
-
-    private Long chatId;
+@Builder(toBuilder = true)
+public class UpdateInformationDto implements Serializable {
 
     private User telegramUser;
+    private String message;
+    private Long chatId;
 
 }

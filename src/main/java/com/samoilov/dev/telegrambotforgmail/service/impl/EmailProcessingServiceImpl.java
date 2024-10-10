@@ -4,7 +4,7 @@ import com.google.api.services.gmail.model.MessagePart;
 import com.google.api.services.gmail.model.MessagePartBody;
 import com.google.api.services.gmail.model.MessagePartHeader;
 import com.samoilov.dev.telegrambotforgmail.exception.GmailException;
-import com.samoilov.dev.telegrambotforgmail.mapper.InformationMapper;
+import com.samoilov.dev.telegrambotforgmail.mapper.TelegramInfoMapper;
 import com.samoilov.dev.telegrambotforgmail.service.EmailProcessingService;
 import com.samoilov.dev.telegrambotforgmail.store.dto.EmailMessageDto;
 import com.samoilov.dev.telegrambotforgmail.util.ButtonsUtil;
@@ -44,7 +44,7 @@ public class EmailProcessingServiceImpl implements EmailProcessingService {
     private static final String EMAIL_DATE = "Date";
 
     private final ApplicationEventPublisher eventPublisher;
-    private final InformationMapper informationMapper;
+    private final TelegramInfoMapper telegramInfoMapper;
 
     @Override
     public String prepareMessagePart(MessagePart messagePart) {
@@ -82,7 +82,7 @@ public class EmailProcessingServiceImpl implements EmailProcessingService {
             throw new GmailException();
         }
 
-        return informationMapper.mapEmailMessageDtoToMime(
+        return telegramInfoMapper.mapEmailMessageDtoToMime(
                 EmailMessageDto.builder()
                         .from(fromEmail)
                         .to(splitRawMessage[0])
